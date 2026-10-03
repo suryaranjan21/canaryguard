@@ -402,7 +402,7 @@ void cg_hooks_exit(void)
 {
 	int i;
 
-	/* returns only after no hook of ours is still running */
+	/* when this returns, none of our handlers can run any more */
 	for (i = ARRAY_SIZE(cg_probes) - 1; i >= 0; i--)
 		unregister_kretprobe(&cg_probes[i]);
 }

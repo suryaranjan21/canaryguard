@@ -1,0 +1,199 @@
+# Output of a complete "make test" (Ubuntu 24.04, kernel 6.8, arm64). Colours removed.
+# The demo folders live in /var/tmp/canaryguard-demo; the user name is anonymised.
+
+sudo build/cgdemo --auto
+
+=== CanaryGuard: stopping ransomware inside the Linux kernel ===
+  Ransomware scrambles every file it can reach and then demands money.
+  CanaryGuard is a driver INSIDE the kernel. Every program must ask the kernel
+  before it opens, changes or deletes a file, so the driver sees every attempt.
+  
+  Three layers of defence:
+    1. canary files    bait documents that no real user ever changes
+    2. speed check     no human changes 10 different files in 2 seconds
+    3. honeytoken      a fake password file; anyone who reads it is snooping
+  
+  The attacker today is 'ransim': a HARMLESS imitation of ransomware that only
+  works inside the demo folders in /var/tmp/canaryguard-demo.
+
+=== Act 1: an attack WITHOUT protection ===
+  Folder 1_unprotected is not guarded. Let's see what ransomware does to it.
+  $ ransim --attack /var/tmp/canaryguard-demo/1_unprotected
+ransim (harmless demo): encrypting 20 files in /var/tmp/canaryguard-demo/1_unprotected
+  [ 1/20] encrypting Agreement_Rent.docx
+  [ 2/20] encrypting Agreement_Vehicle.docx
+  [ 3/20] encrypting Appraisal_Letter.pdf
+  [ 4/20] encrypting Certificates_Scan.pdf
+  [ 5/20] encrypting Contract_Offer.pdf
+  [ 6/20] encrypting Course_Notes_Linux.txt
+  [ 7/20] encrypting Diary_2026.docx
+  [ 8/20] encrypting Exam_Timetable.xlsx
+  [ 9/20] encrypting Holiday_Photo_01.jpg
+  [10/20] encrypting Holiday_Photo_02.jpg
+  [11/20] encrypting Holiday_Photo_03.jpg
+  [12/20] encrypting Insurance_Policy.pdf
+  [13/20] encrypting Invoice_Laptop.pdf
+  [14/20] encrypting Medical_Report.pdf
+  [15/20] encrypting Project_Report.docx
+  [16/20] encrypting Resume_Final.docx
+  [17/20] encrypting Salary_Slips.zip
+  [18/20] encrypting Semester_Marks.xlsx
+  [19/20] encrypting Thesis_Draft.docx
+  [20/20] encrypting Wedding_Video_Clip.mp4
+ransim finished: 20 files encrypted, 0 blocked. Nothing stopped it.
+  [PASS] nothing stopped the attack: 20 of 20 files are encrypted
+  [PASS] the driver recorded no events (nothing was registered)
+  Every document is now '.locked' and unreadable. This is the problem we solve.
+  $ ransim --restore /var/tmp/canaryguard-demo/1_unprotected
+ransim: restored 20 files in /var/tmp/canaryguard-demo/1_unprotected
+  [PASS] restore brought every file back, byte for byte
+
+=== Act 2: layer 1, canary files ===
+  We plant bait files (Budget_2026.xlsx and others) in 2_bait with canaryctl.
+  To a thief they look valuable. To us they are tripwires: nobody legitimate touches them.
+  $ sudo canaryctl plant /var/tmp/canaryguard-demo/2_bait
+Planting bait in /var/tmp/canaryguard-demo/2_bait
+  watching folder   /var/tmp/canaryguard-demo/2_bait   (id 1)
+  canary file      Budget_2026.xlsx   (id 2)
+  canary file      Family_Photos_Backup.zip   (id 3)
+  canary file      Tax_Returns_2025.pdf   (id 4)
+  honeytoken       passwords.txt   (id 5)
+  honeytoken       server_login_backup.txt   (id 6)
+  
+  Now the same attack, on the guarded folder:
+  $ ransim --attack /var/tmp/canaryguard-demo/2_bait
+ransim (harmless demo): encrypting 25 files in /var/tmp/canaryguard-demo/2_bait
+  [ 1/25] encrypting Agreement_Rent.docx
+  [ 2/25] encrypting Agreement_Vehicle.docx
+  [ 3/25] encrypting Appraisal_Letter.pdf
+  [ 4/25] encrypting Budget_2026.xlsx
+  -> killed by the kernel (signal 9)
+  [PASS] ransim was KILLED by the kernel (SIGKILL)
+  [PASS] it got through only 3 files before it touched a canary
+  [PASS] the canary files are untouched
+  [PASS] driver counters: 1 canary hit, 1 process killed
+  [PASS] alert says: ransim tried to WRITE Budget_2026.xlsx and was KILLED
+  The kernel refused the write AND killed the attacker. The few files it already
+  scrambled are the price: the guard limits the damage, it cannot undo it.
+  $ ransim --restore /var/tmp/canaryguard-demo/2_bait
+ransim: restored 3 files in /var/tmp/canaryguard-demo/2_bait
+  [PASS] restore brought the 3 encrypted files back
+
+=== Act 3: layer 2, the speed check ===
+  What if the ransomware avoids the bait? Folder 3_speed has NO bait files at all,
+  we only tell the driver to watch it. The rule: 10 different files within 2 seconds.
+  $ sudo canaryctl watch /var/tmp/canaryguard-demo/3_speed
+  watching folder   /var/tmp/canaryguard-demo/3_speed   (id 7)
+  $ ransim --attack /var/tmp/canaryguard-demo/3_speed
+ransim (harmless demo): encrypting 20 files in /var/tmp/canaryguard-demo/3_speed
+  [ 1/20] encrypting Agreement_Rent.docx
+  [ 2/20] encrypting Agreement_Vehicle.docx
+  [ 3/20] encrypting Appraisal_Letter.pdf
+  [ 4/20] encrypting Certificates_Scan.pdf
+  [ 5/20] encrypting Contract_Offer.pdf
+  [ 6/20] encrypting Course_Notes_Linux.txt
+  [ 7/20] encrypting Diary_2026.docx
+  [ 8/20] encrypting Exam_Timetable.xlsx
+  [ 9/20] encrypting Holiday_Photo_01.jpg
+  [10/20] encrypting Holiday_Photo_02.jpg
+  -> killed by the kernel (signal 9)
+  [PASS] ransim was KILLED by the kernel (SIGKILL)
+  [PASS] only 9 files were encrypted: the 10th file was protected
+  [PASS] driver counters: 1 speed-check hit, 1 process killed
+  [PASS] alert says: ransim changed 10 files within 2000 ms
+  Behaviour, not names: it caught an attacker that never touched a bait file.
+  $ ransim --restore /var/tmp/canaryguard-demo/3_speed
+ransim: restored 9 files in /var/tmp/canaryguard-demo/3_speed
+  [PASS] restore brought the files back
+
+=== Act 4: the honeytoken (fake secrets) ===
+  planted in 2_bait is a file called passwords.txt. Its content is fake; nobody honest
+  needs it. A thief searching for saved passwords will open it:
+  $ cat /var/tmp/canaryguard-demo/2_bait/passwords.txt
+My passwords (do not share!)
+----------------------------
+Gmail        student.demo@example.com     Summer#2026!
+Net banking  demo_user_4821               Blue$Horse9
+Wi-Fi        HomeNetwork_5G               kP9#mQ2$vL
+  [PASS] cat was NOT killed (reading is only suspicious, not destructive)
+  [PASS] but the driver raised a honeytoken alert
+  [PASS] alert says: cat (a known process, a known user) read passwords.txt
+  We know WHICH program and WHICH user looked at the secrets, at the exact second.
+
+=== Act 5: what the driver knows ===
+  $ sudo canaryctl list
+ID   KIND            HITS   PATH
+1    watched-folder  0      /var/tmp/canaryguard-demo/2_bait
+2    canary          1      /var/tmp/canaryguard-demo/2_bait/Budget_2026.xlsx
+3    canary          0      /var/tmp/canaryguard-demo/2_bait/Family_Photos_Backup.zip
+4    canary          0      /var/tmp/canaryguard-demo/2_bait/Tax_Returns_2025.pdf
+5    honeytoken      1      /var/tmp/canaryguard-demo/2_bait/passwords.txt
+6    honeytoken      0      /var/tmp/canaryguard-demo/2_bait/server_login_backup.txt
+7    watched-folder  1      /var/tmp/canaryguard-demo/3_speed
+  $ sudo canaryctl stats
+Mode              : kill (block + kill attackers)
+Speed check       : on, limit 10 files within 2000 ms
+Protected items   : 7
+Events recorded   : 3
+Events lost       : 0  (ring buffer holds 128)
+Processes killed  : 2
+  canary hits     : 1
+  honeytoken hits : 1
+  speed-check hits: 1
+Open handles      : 2
+  $ cat /sys/class/canaryguard/canaryguard/stats      (the same numbers through sysfs)
+events 3
+dropped 0
+kills 2
+canary_hits 1
+honeytoken_hits 1
+speed_hits 1
+entries 7
+mode kill
+
+=== Extra checks ===
+  warn mode: the attack is only reported, never stopped
+  [PASS] ransim ran to the end
+  [PASS] the driver only alerted (2 speed alerts, 0 kills)
+  $ ransim --restore /var/tmp/canaryguard-demo/3_speed
+ransim: restored 20 files in /var/tmp/canaryguard-demo/3_speed
+  [PASS] files restored
+  safe list: a trusted process name is never touched
+  [PASS] an allow-listed 'ransim' finished its run
+  [PASS] no alert, no kill
+  [PASS] files restored
+  normal work: ordinary programs are left alone
+  [PASS] copying 5 files inside a watched folder is not disturbed
+  [PASS] copying 12 files at once IS stopped (documented trade-off: use 'canaryctl allow cp')
+  deleting or renaming a canary
+  [PASS] rm was killed and the canary still exists
+  [PASS] mv was killed and the canary kept its name
+  [PASS] alerts name the operations 'delete' and 'rename'
+  layers: a SLOW attacker passes the speed check, but not the canary
+  [PASS] slow attack on the folder with only the speed check: not stopped (known limitation)
+  $ ransim --restore /var/tmp/canaryguard-demo/3_speed
+ransim: restored 20 files in /var/tmp/canaryguard-demo/3_speed
+  [PASS] the same slow attack on the bait folder: killed at the canary
+  $ ransim --restore /var/tmp/canaryguard-demo/2_bait
+ransim: restored 3 files in /var/tmp/canaryguard-demo/2_bait
+  [PASS] files restored
+  ring buffer: events are never lost silently
+  [PASS] 200 events raised: 128 kept, 72 counted as dropped
+  the driver says no to bad requests
+  [PASS] refuses to watch /usr
+  [PASS] refuses to watch /
+  [PASS] refuses a path that does not exist
+  [PASS] refuses a file as a watched folder
+  [PASS] refuses to register the same file twice
+  [PASS] refuses a speed limit of 1 file
+  [PASS] refuses a 50 ms window
+  [PASS] a normal user cannot open /dev/canaryguard
+  [PASS] the built-in SHA-256 matches the official test vector
+  the live monitor (canaryd): alerts reach a log file, tampering is noticed
+  [PASS] canaryd logged the KILLED alert for ransim
+  [PASS] canaryd noticed that a canary file was changed behind the driver's back
+  [PASS] canaryd stopped cleanly on SIGTERM
+
+=== Result ===
+  44 passed, 0 failed
+  ALL CHECKS PASSED

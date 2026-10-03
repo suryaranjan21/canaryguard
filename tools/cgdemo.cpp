@@ -21,8 +21,10 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <iomanip>
+#include <iterator>
 #include <iostream>
 #include <map>
 #include <string>
@@ -577,6 +579,55 @@ private:
             check("the built-in SHA-256 matches the official test vector",
                   cg::Sha256::ofString("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
         }
+
+        // the live monitor (must be last: it reads the events itself)
+        {
+            say("the live monitor (canaryd): alerts reach a log file, tampering is noticed");
+            const fs::path log = "/tmp/canaryguard-cgdemo-monitor.log";
+            std::error_code ec;
+            fs::remove(log, ec);
+            drain();
+            pid_t mon = ::fork();
+            if (mon == 0) {
+                int nul = ::open("/dev/null", O_WRONLY);
+                ::dup2(nul, 1);
+                ::dup2(nul, 2);
+                std::string path = tool("canaryd").string();
+                ::execl(path.c_str(), "canaryd", "--no-color", "--interval", "1", "--log", log.c_str(),
+                        static_cast<char*>(nullptr));
+                ::_exit(127);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+
+            run({"ransim", "--attack", bait_.string()}, Who::Invoker, true);
+            check("canaryd logged the KILLED alert for ransim",
+                  waitForLog(log, "KILLED", std::chrono::seconds(3)) && waitForLog(log, "ransim", std::chrono::seconds(1)));
+            run({"ransim", "--restore", bait_.string()}, Who::Invoker, true);
+
+            // change a canary behind the driver's back (the safe list lets 'truncate' through)
+            dev_.allow("truncate");
+            run({"truncate", "-s", "0", (bait_ / "Tax_Returns_2025.pdf").string()}, Who::Invoker, true);
+            dev_.disallow("truncate");
+            check("canaryd noticed that a canary file was changed behind the driver's back",
+                  waitForLog(log, "INTEGRITY", std::chrono::seconds(5)));
+
+            ::kill(mon, SIGTERM);
+            int st = 0;
+            ::waitpid(mon, &st, 0);
+            check("canaryd stopped cleanly on SIGTERM", WIFEXITED(st) && WEXITSTATUS(st) == 0 && waitForLog(log, "STOP", std::chrono::seconds(1)));
+            fs::remove(log, ec);
+        }
+    }
+
+    static bool waitForLog(const fs::path& log, const std::string& needle, std::chrono::milliseconds limit) {
+        auto deadline = std::chrono::steady_clock::now() + limit;
+        while (std::chrono::steady_clock::now() < deadline) {
+            std::ifstream in(log);
+            std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+            if (text.find(needle) != std::string::npos) return true;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        return false;
     }
 
     bool restoredOk(const fs::path& dir) const {
