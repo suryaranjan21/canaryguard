@@ -13,9 +13,14 @@ TOOLS    := canaryctl canaryd ransim cgdemo
 TOOL_BIN := $(addprefix $(BUILD)/,$(TOOLS))
 MODULE   := kernel/canaryguard.ko
 
-.PHONY: all kernel tools load unload reload test demo stress clean help
+.PHONY: all deps kernel tools load unload reload test demo stress clean help
 
 all: kernel tools
+
+# one-time setup on Ubuntu/Debian: compiler, make and the headers of the RUNNING kernel
+deps:
+	sudo apt-get update
+	sudo apt-get install -y build-essential linux-headers-$(shell uname -r)
 
 # ---- kernel module (C) ------------------------------------------------------
 
@@ -65,6 +70,7 @@ clean:
 	rm -rf $(BUILD)
 
 help:
+	@echo "make deps       install the build tools and kernel headers (Ubuntu, once)"
 	@echo "make            build the kernel module and the C++ tools"
 	@echo "make load       load the driver into the running kernel   (needs sudo)"
 	@echo "make unload     remove the driver"

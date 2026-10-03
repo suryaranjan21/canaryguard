@@ -5,7 +5,8 @@
 //   canaryd                       show alerts on screen until Ctrl+C
 //   canaryd --log FILE            also append every alert to FILE
 //   canaryd --daemon [--log FILE] run in the background (default log:
-//                                 /var/log/canaryguard.log, pid in /run/canaryd.pid)
+//                                 /var/log/canaryguard.log, pid in /run/canaryd.pid;
+//                                 stop it with: sudo kill $(cat /run/canaryd.pid))
 //   canaryd --interval SECONDS    how often canary files are re-checked (default 5)
 //   canaryd --no-integrity        skip the periodic canary check
 //   canaryd --selftest            check the built-in SHA-256 and exit
@@ -36,6 +37,8 @@
 #include <vector>
 
 namespace {
+
+constexpr const char* kPidFile = "/run/canaryd.pid";
 
 // ---------------------------------------------------------------------------
 // Alert delivery. The bus knows nothing about screens or files: it hands each
@@ -257,7 +260,7 @@ int main(int argc, char** argv) {
         sigaddset(&mask, SIGTERM);
         sigprocmask(SIG_BLOCK, &mask, nullptr);
 
-        if (daemon) daemonize("/run/canaryd.pid");   // must happen before any thread exists
+        if (daemon) daemonize(kPidFile);   // must happen before any thread exists
 
         cg::Fd sigFd(::signalfd(-1, &mask, SFD_CLOEXEC));
         if (!sigFd) throw cg::Error(cg::errnoText("signalfd", errno));
@@ -306,6 +309,7 @@ int main(int argc, char** argv) {
 
         if (watcher) watcher->stop();
         bus.info("STOP", "monitor stopped");
+        if (daemon) ::unlink(kPidFile);
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "canaryd: " << e.what() << "\n";
