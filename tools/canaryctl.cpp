@@ -14,6 +14,7 @@
 //   canaryctl allowed             list the safe names
 //   canaryctl remove <id>         stop guarding one item
 //   canaryctl clear               stop guarding everything
+//   canaryctl reset               set the counters back to zero
 //
 // Every command talks to the kernel driver through /dev/canaryguard.
 #include "cg_common.hpp"
@@ -264,6 +265,13 @@ int cmdRemove(cg::Device& dev, const Args& a) {
     return 0;
 }
 
+int cmdReset(cg::Device& dev, const Args& a) {
+    need(a, 0, "reset");
+    dev.resetStats();
+    std::cout << "Counters are back to zero\n";
+    return 0;
+}
+
 int cmdClear(cg::Device& dev, const Args& a) {
     need(a, 0, "clear");
     dev.clear();
@@ -283,7 +291,8 @@ void usage() {
                  "  disallow <name>       remove a name from the safe list\n"
                  "  allowed               list the safe names\n"
                  "  remove <id>           stop guarding one item\n"
-                 "  clear                 stop guarding everything\n\n"
+                 "  clear                 stop guarding everything\n"
+                 "  reset                 set the counters back to zero\n\n"
                  "Needs root: run with sudo. The driver must be loaded ('sudo make load').\n";
 }
 
@@ -299,7 +308,7 @@ int main(int argc, char** argv) {
     const std::map<std::string, std::function<int(cg::Device&, const Args&)>> commands = {
         {"plant", cmdPlant}, {"watch", cmdWatch},       {"list", cmdList},   {"stats", cmdStats},
         {"mode", cmdMode},   {"speed", cmdSpeed},       {"allow", cmdAllow}, {"disallow", cmdDisallow},
-        {"allowed", cmdAllowed}, {"remove", cmdRemove}, {"clear", cmdClear},
+        {"allowed", cmdAllowed}, {"remove", cmdRemove}, {"clear", cmdClear}, {"reset", cmdReset},
     };
 
     auto it = commands.find(argv[1]);

@@ -117,6 +117,7 @@ public:
 
     void remove(uint32_t id) { call(CG_IOC_REMOVE, &id, "remove entry"); }
     void clear() { callNoArg(CG_IOC_CLEAR, "clear all entries"); }
+    void resetStats() { callNoArg(CG_IOC_RESET_STATS, "reset the counters"); }
 
     std::vector<cg_entry> entries() {
         std::vector<cg_entry> out;

@@ -182,6 +182,7 @@ void cg_table_clear(void)
 	spin_lock_irqsave(&cg_lock, flags);
 	list_splice_init(&cg_entries, &dead);
 	atomic_set(&cg_count, 0);
+	cg_next_id = 1;                 /* a fresh start: numbering begins at 1 */
 	spin_unlock_irqrestore(&cg_lock, flags);
 
 	list_for_each_entry_safe(e, tmp, &dead, node) {

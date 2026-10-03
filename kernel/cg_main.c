@@ -129,6 +129,14 @@ static long cg_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case CG_IOC_CLEAR:
 		cg_table_clear();
 		return 0;
+	case CG_IOC_RESET_STATS:
+		atomic64_set(&cg_stat.events, 0);
+		atomic64_set(&cg_stat.dropped, 0);
+		atomic64_set(&cg_stat.kills, 0);
+		atomic64_set(&cg_stat.canary_hits, 0);
+		atomic64_set(&cg_stat.honeytoken_hits, 0);
+		atomic64_set(&cg_stat.speed_hits, 0);
+		return 0;
 	case CG_IOC_GET_ENTRY: {
 		struct cg_get_entry ge;
 

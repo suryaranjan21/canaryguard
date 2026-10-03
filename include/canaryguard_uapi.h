@@ -141,5 +141,6 @@ struct cg_allow {                        /* safe list of process names         *
 #define CG_IOC_ALLOW_ADD    _IOW(CG_IOC_MAGIC, 8, struct cg_allow)
 #define CG_IOC_ALLOW_DEL    _IOW(CG_IOC_MAGIC, 9, struct cg_allow)
 #define CG_IOC_ALLOW_GET    _IOWR(CG_IOC_MAGIC, 10, struct cg_allow)
+#define CG_IOC_RESET_STATS  _IO(CG_IOC_MAGIC, 11)
 
 #endif /* CANARYGUARD_UAPI_H */
