@@ -136,6 +136,7 @@ Speed check       : on, limit 10 files within 2000 ms
 Protected items   : 7
 Events recorded   : 3
 Events lost       : 0  (ring buffer holds 128)
+Operations missed : 0  (kernel had no free probe slot; should be 0)
 Processes killed  : 2
   canary hits     : 1
   honeytoken hits : 1
@@ -144,6 +145,7 @@ Open handles      : 2
   $ cat /sys/class/canaryguard/canaryguard/stats      (the same numbers through sysfs)
 events 3
 dropped 0
+missed 0
 kills 2
 canary_hits 1
 honeytoken_hits 1
@@ -179,6 +181,9 @@ ransim: restored 3 files in /var/tmp/canaryguard-demo/2_bait
   [PASS] files restored
   ring buffer: events are never lost silently
   [PASS] 200 events raised: 128 kept, 72 counted as dropped
+  running 'plant' twice must not leave the bait unguarded (regression)
+  [PASS] a second 'plant' registers the same number of items (6)
+  [PASS] and the bait is really guarded after the second plant
   the driver says no to bad requests
   [PASS] refuses to watch /usr
   [PASS] refuses to watch /
@@ -189,11 +194,21 @@ ransim: restored 3 files in /var/tmp/canaryguard-demo/2_bait
   [PASS] refuses a 50 ms window
   [PASS] a normal user cannot open /dev/canaryguard
   [PASS] the built-in SHA-256 matches the official test vector
+  evasion: a hard link gives a canary a second, innocent-looking name
+  [PASS] reading a canary through the hard link is not treated as an attack
+  [PASS] WRITING through the hard link is blocked and killed (we match the inode, not the name)
+  evasion: an attacker that starts a NEW PROCESS for every file
+  [PASS] the speed check alone does NOT stop it: the count is per process (documented limitation)
+  $ ransim --restore /var/tmp/canaryguard-demo/3_speed
+ransim: restored 20 files in /var/tmp/canaryguard-demo/3_speed
+  [PASS] but the canary layer DOES stop it: every bait file is untouched
+  $ ransim --restore /var/tmp/canaryguard-demo/3_speed
+ransim: restored 20 files in /var/tmp/canaryguard-demo/3_speed
   the live monitor (canaryd): alerts reach a log file, tampering is noticed
   [PASS] canaryd logged the KILLED alert for ransim
   [PASS] canaryd noticed that a canary file was changed behind the driver's back
   [PASS] canaryd stopped cleanly on SIGTERM
 
 === Result ===
-  44 passed, 0 failed
+  50 passed, 0 failed
   ALL CHECKS PASSED
