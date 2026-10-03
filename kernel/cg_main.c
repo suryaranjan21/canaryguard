@@ -216,7 +216,7 @@ static const struct file_operations cg_fops = {
 	.read           = cg_read,
 	.poll           = cg_poll,
 	.unlocked_ioctl = cg_ioctl,
-	.llseek         = no_llseek,
+	/* no .llseek: nonseekable_open() in cg_open() already forbids seeking */
 };
 
 /* ---- sysfs: cat /sys/class/canaryguard/canaryguard/stats ---------------- */
