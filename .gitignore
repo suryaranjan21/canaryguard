@@ -1,0 +1,16 @@
+# build output
+build/
+*.ko
+*.o
+*.mod
+*.mod.c
+*.mod.o
+.*.cmd
+.tmp_versions/
+Module.symvers
+modules.order
+.cache.mk
+
+# editors / OS
+.DS_Store
+*.swp
