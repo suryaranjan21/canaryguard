@@ -144,23 +144,32 @@ int cmdPlant(cg::Device& dev, const Args& a) {
 
     std::cout << "Planting bait in " << dir.string() << "\n";
 
-    // 1. create the files first (the folder is not watched yet) ...
-    std::vector<std::pair<fs::path, uint32_t>> planted;
+    // 1. Create the bait files first, while the folder is not watched yet.
+    //    A file that is already there is left exactly as it is, but it is
+    //    still registered below: otherwise running 'plant' a second time
+    //    would leave the bait sitting there unprotected.
+    std::vector<std::pair<fs::path, uint32_t>> bait;
     for (const Bait& b : kBait) {
         fs::path file = dir / b.name;
         std::string body = b.kind == CG_KIND_CANARY ? canaryBody(b.name) : honeytokenBody(b.name);
-        if (createBaitFile(file, body, st.st_uid, st.st_gid))
-            planted.emplace_back(file, b.kind);
-        else
-            std::cout << "  skipped " << b.name << " (a file with this name already exists, not touching it)\n";
+        bool fresh = createBaitFile(file, body, st.st_uid, st.st_gid);
+        if (!fresh) std::cout << "  (" << b.name << " already exists: keeping its contents)\n";
+        bait.emplace_back(file, b.kind);
     }
 
-    // 2. ... then tell the driver about them.
+    // 2. ... then tell the driver about the folder and every bait file.
     watchFolder(dev, dir);
-    for (const auto& [file, kind] : planted) {
-        uint32_t id = dev.add(kind, file.string());
-        std::cout << "  " << std::left << std::setw(17) << (kind == CG_KIND_CANARY ? "canary file" : "honeytoken")
-                  << file.filename().string() << "   (id " << id << ")\n";
+    for (const auto& [file, kind] : bait) {
+        const char* label = kind == CG_KIND_CANARY ? "canary file" : "honeytoken";
+        try {
+            uint32_t id = dev.add(kind, file.string());
+            std::cout << "  " << std::left << std::setw(17) << label << file.filename().string() << "   (id " << id
+                      << ")\n";
+        } catch (const cg::Error& e) {
+            if (std::string(e.what()).find("File exists") == std::string::npos) throw;
+            std::cout << "  " << std::left << std::setw(17) << label << file.filename().string()
+                      << "   (already guarded)\n";
+        }
     }
     return 0;
 }
@@ -197,6 +206,7 @@ int cmdStats(cg::Device& dev, const Args& a) {
               << "Protected items   : " << s.entries << "\n"
               << "Events recorded   : " << s.events << "\n"
               << "Events lost       : " << s.dropped << "  (ring buffer holds " << CG_RING_EVENTS << ")\n"
+              << "Operations missed : " << s.missed << "  (kernel had no free probe slot; should be 0)\n"
               << "Processes killed  : " << s.kills << "\n"
               << "  canary hits     : " << s.canary_hits << "\n"
               << "  honeytoken hits : " << s.honeytoken_hits << "\n"

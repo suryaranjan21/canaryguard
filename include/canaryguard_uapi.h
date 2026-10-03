@@ -108,6 +108,8 @@ struct cg_get_entry {                    /* CG_IOC_GET_ENTRY                   *
 struct cg_stats {                        /* CG_IOC_GET_STATS                   */
 	__u64 events;                    /* events queued                      */
 	__u64 dropped;                   /* events lost: ring buffer was full  */
+	__u64 missed;                    /* file operations the kernel could   */
+					 /* not hand to us (no free probe slot)*/
 	__u64 kills;                     /* processes killed                   */
 	__u64 canary_hits;
 	__u64 honeytoken_hits;

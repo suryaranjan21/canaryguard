@@ -85,8 +85,8 @@ The safe way to move data between user memory and kernel memory. A pointer from 
 **25. Where do you allocate memory in the kernel?**
 `kzalloc` for each decoy entry and `kfifo_alloc` for the ring buffer (which uses `kmalloc`), both with `GFP_KERNEL`, which is allowed to sleep, so only in process context (ioctl, module init), never in the hook. Everything is freed on `clear` and on `rmmod`.
 
-**26. How does the driver recognise a canary?**
-By **inode**, not by name. When a decoy is registered, the kernel resolves the path (`kern_path`) and I keep the `struct path`, which pins the file so its inode cannot be freed or reused. Comparing inode pointers is immune to relative paths, symlinks and hard links.
+**26. How does the driver recognise a canary? Could I rename it to escape?**
+By **inode**, not by name. Renaming it, or making a hard link with an innocent name and attacking that, does not help: all of those point at the same inode, and a test proves it. When a decoy is registered, the kernel resolves the path (`kern_path`) and I keep the `struct path`, which pins the file so its inode cannot be freed or reused. Comparing inode pointers is immune to relative paths, symlinks and hard links.
 
 **27. How does the speed check work?**
 For each process (thread group) I keep a stop-watch and a list of the *different* files it changed (by inode number) in watched folders. If the count reaches the limit (default 10) before the window (default 2 seconds) runs out, the process is blocked and killed. Writing the same file a thousand times counts as one. A fixed table of 32 processes is used because the hook may not allocate memory.
@@ -151,7 +151,7 @@ It refuses to touch a folder that lacks a marker file created by `ransim --setup
 Measured: about 0.1 to 0.14 µs added per `open()` (569 ns to about 680-710 ns for open+close). When nothing is registered the hook does one atomic read and returns.
 
 **45. What are the limitations?**
-(1) It limits damage but cannot undo it: files encrypted before the catch stay encrypted. (2) A slow attacker passes the speed check (but not the bait). (3) Bulk work inside a watched folder can look like an attack: there is warn mode and the safe list. (4) The safe list uses process names, which can be imitated. (5) Root can unload the driver. (6) A few write paths, like `truncate(2)` by path, are not hooked; the integrity check covers them. (7) It is a learning prototype, not a commercial product.
+(1) It limits damage but cannot undo it: files encrypted before the catch stay encrypted. (2) A slow attacker passes the speed check (but not the bait). (3) Bulk work inside a watched folder can look like an attack: there is warn mode and the safe list. (4) The safe list uses process names, which can be imitated. (5) Root can unload the driver. (6) An attacker that forks a new process per file defeats the speed check (the canary layer still catches it). (7) A few write paths, like a file that was already open before it was registered, are not hooked; the integrity check covers them. (8) It is a learning prototype, not a commercial product.
 
 **46. Can ransomware simply switch it off?**
 Only if it already has root: then it can `rmmod` the module. That is true for any defence that runs on the same machine. In production one would add module signing, kernel lockdown and a remote monitor.

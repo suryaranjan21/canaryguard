@@ -29,7 +29,7 @@ static_assert(sizeof(cg_event) == 384, "cg_event layout changed");
 static_assert(sizeof(cg_entry) == 272, "cg_entry layout changed");
 static_assert(sizeof(cg_add_req) == 264, "cg_add_req layout changed");
 static_assert(sizeof(cg_get_entry) == 280, "cg_get_entry layout changed");
-static_assert(sizeof(cg_stats) == 64, "cg_stats layout changed");
+static_assert(sizeof(cg_stats) == 72, "cg_stats layout changed");
 static_assert(sizeof(cg_config) == 16, "cg_config layout changed");
 static_assert(sizeof(cg_allow) == 24, "cg_allow layout changed");
 

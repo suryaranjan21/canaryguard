@@ -4,6 +4,7 @@
 //
 //   ransim --setup  <folder>              create a demo folder with 20 sample files
 //   ransim --attack <folder> [--order alpha|reverse|random] [--delay-ms N]
+//                             [--fork-per-file]   one child process per file
 //   ransim --restore <folder>             undo the attack
 //   ransim --snoop  <file> [--times N]    just read a file N times (honeytoken test)
 //
@@ -19,6 +20,7 @@
 #include "sandbox.hpp"
 
 #include <fcntl.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -71,6 +73,41 @@ void requireSandbox(const fs::path& dir) {
         throw std::runtime_error("refusing to touch '" + dir.string() +
                                  "': it is not a demo folder (no " + sandbox::kMarker + " file). "
                                  "Create one with: ransim --setup <folder>");
+}
+
+// Encrypt one file. Returns 0, or an errno if the guard blocked us.
+int lockOne(const fs::path& file) {
+    std::string data;
+    if (!readAll(file, data)) return EIO;
+    scramble(data);
+    if (int err = overwrite(file, data)) return err;
+    fs::path locked = file;
+    locked += sandbox::kLockedSuffix;
+    return ::rename(file.c_str(), locked.c_str()) == 0 ? 0 : errno;
+}
+
+/*
+ * Each file is encrypted by a separate child process. A per-process rule like
+ * the speed check never sees more than one file per process, so this evades
+ * it; the canary files still stop it (the child that touches one is killed).
+ */
+int attackForked(const fs::path& dir, sandbox::Order order) {
+    requireSandbox(dir);
+    auto files = sandbox::targets(dir, order);
+    std::cout << "ransim (harmless demo, one process per file): " << files.size() << " files in " << dir.string()
+              << "\n";
+    size_t done = 0, blocked = 0;
+    for (const fs::path& file : files) {
+        pid_t pid = ::fork();
+        if (pid < 0) return 1;
+        if (pid == 0) ::_exit(lockOne(file) == 0 ? 0 : 1);
+        int status = 0;
+        while (::waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) ++done;
+        else ++blocked;
+    }
+    std::cout << "ransim finished: " << done << " encrypted, " << blocked << " blocked or killed.\n";
+    return 0;
 }
 
 int attack(const fs::path& dir, sandbox::Order order, int delayMs) {
@@ -155,6 +192,7 @@ void usage() {
     std::cout << "ransim - harmless ransomware imitation (demos and tests only)\n\n"
                  "  ransim --setup   <folder>\n"
                  "  ransim --attack  <folder> [--order alpha|reverse|random] [--delay-ms N]\n"
+                 "                            [--fork-per-file]\n"
                  "  ransim --restore <folder>\n"
                  "  ransim --snoop   <file> [--times N]\n";
 }
@@ -170,6 +208,7 @@ int main(int argc, char** argv) {
     std::string target = argv[2];
     sandbox::Order order = sandbox::Order::Alpha;
     int delayMs = 0, times = 1;
+    bool forkPerFile = false;
 
     try {
         for (int i = 3; i < argc; ++i) {
@@ -188,6 +227,8 @@ int main(int argc, char** argv) {
                 delayMs = std::stoi(value());
             } else if (opt == "--times") {
                 times = std::stoi(value());
+            } else if (opt == "--fork-per-file") {
+                forkPerFile = true;
             } else {
                 throw std::runtime_error("unknown option: " + opt);
             }
@@ -198,7 +239,7 @@ int main(int argc, char** argv) {
             std::cout << "ransim: demo folder ready: " << target << "\n";
             return 0;
         }
-        if (mode == "--attack") return attack(target, order, delayMs);
+        if (mode == "--attack") return forkPerFile ? attackForked(target, order) : attack(target, order, delayMs);
         if (mode == "--restore") return restore(target);
         if (mode == "--snoop") return snoop(target, times);
 

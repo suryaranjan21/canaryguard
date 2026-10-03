@@ -67,6 +67,7 @@ __poll_t cg_events_poll(struct file *file, struct poll_table_struct *wait);
 /* ---- cg_hooks.c -------------------------------------------------------- */
 int  cg_hooks_init(void);
 void cg_hooks_exit(void);
+u64  cg_hooks_missed(void);
 
 /* ---- small compatibility helper --------------------------------------- */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)

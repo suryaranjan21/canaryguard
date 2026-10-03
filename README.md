@@ -59,7 +59,7 @@ cd canaryguard
 
 make deps      # once: compiler + the headers of your running kernel
 make           # build the kernel driver and the four tools
-make test      # loads the driver and runs 44 automatic PASS/FAIL checks
+make test      # loads the driver and runs 50 automatic PASS/FAIL checks
 make demo      # guided, narrated live demo (press Enter between acts)
 sudo make unload
 ```
@@ -190,7 +190,7 @@ canaryguard/
 
 | What | How | Result |
 |------|-----|--------|
-| End-to-end behaviour | `make test`: 44 automatic checks (all three layers, warn mode, safe list, delete/rename, slow attacker, ring-buffer overflow, bad input, permissions) | all pass |
+| End-to-end behaviour | `make test`: 50 automatic checks (all three layers, warn mode, safe list, delete/rename, slow attacker, ring-buffer overflow, bad input, permissions) | all pass |
 | Load / unload | `make stress`: 20 cycles | no failure, no leak |
 | Concurrency | 8 loops of heavy file activity + two attackers being killed over and over + decoys rewritten continuously + **unloading the driver in the middle of it** | no crash, no kernel warning |
 | Overhead | open+close micro-benchmark | about **0.1 to 0.14 µs** added per `open()` (569 ns to about 680-710 ns) |
@@ -208,7 +208,7 @@ Being honest about these is part of the design:
 - **The safe list works by process name**, which an attacker could imitate. Real products identify programs by a signature or hash.
 - **Someone with root can switch the guard off** (`rmmod`). It protects against malware running as an ordinary user or as a compromised program, not against a full system takeover.
 - **Not every write is seen:** writing through `truncate(2)` by path, or through a file that was already open before the decoy was registered, is not hooked. `canaryd`'s SHA-256 integrity check is the second line of defence for these cases.
-- **A multi-process attacker** that spreads its work over many processes is counted per process.
+- **An attacker that starts a new process for every file** defeats the speed check, because the count is kept per process. The canary layer still stops it (verified by a test).
 - **Unmounting** a file system that holds a decoy fails until `canaryctl clear` is run (the driver keeps the file pinned).
 - This is a learning prototype, **not a production security product**.
 

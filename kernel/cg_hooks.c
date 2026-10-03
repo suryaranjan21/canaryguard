@@ -398,6 +398,22 @@ undo:
 	return err;
 }
 
+/*
+ * How many times the kernel reached a hooked function but could not run our
+ * handler because all `maxactive` probe slots were busy. Those operations
+ * were NOT inspected. It should stay 0; a non-zero value is reported by
+ * canaryctl and canaryd so the gap is never silent.
+ */
+u64 cg_hooks_missed(void)
+{
+	u64 total = 0;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(cg_probes); i++)
+		total += cg_probes[i].nmissed;
+	return total;
+}
+
 void cg_hooks_exit(void)
 {
 	int i;

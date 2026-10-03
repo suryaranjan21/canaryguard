@@ -59,6 +59,7 @@ static void cg_fill_stats(struct cg_stats *s)
 	memset(s, 0, sizeof(*s));
 	s->events          = atomic64_read(&cg_stat.events);
 	s->dropped         = atomic64_read(&cg_stat.dropped);
+	s->missed          = cg_hooks_missed();
 	s->kills           = atomic64_read(&cg_stat.kills);
 	s->canary_hits     = atomic64_read(&cg_stat.canary_hits);
 	s->honeytoken_hits = atomic64_read(&cg_stat.honeytoken_hits);
@@ -228,10 +229,10 @@ static ssize_t stats_show(struct device *dev, struct device_attribute *attr,
 
 	cg_fill_stats(&s);
 	return sysfs_emit(buf,
-		"events %llu\ndropped %llu\nkills %llu\n"
+		"events %llu\ndropped %llu\nmissed %llu\nkills %llu\n"
 		"canary_hits %llu\nhoneytoken_hits %llu\nspeed_hits %llu\n"
 		"entries %llu\nmode %s\n",
-		s.events, s.dropped, s.kills, s.canary_hits,
+		s.events, s.dropped, s.missed, s.kills, s.canary_hits,
 		s.honeytoken_hits, s.speed_hits, s.entries,
 		READ_ONCE(cg_mode) == CG_MODE_KILL ? "kill" : "warn");
 }
@@ -266,7 +267,7 @@ static int __init cg_init(void)
 	BUILD_BUG_ON(sizeof(struct cg_entry) != 272);
 	BUILD_BUG_ON(sizeof(struct cg_add_req) != 264);
 	BUILD_BUG_ON(sizeof(struct cg_get_entry) != 280);
-	BUILD_BUG_ON(sizeof(struct cg_stats) != 64);
+	BUILD_BUG_ON(sizeof(struct cg_stats) != 72);
 	BUILD_BUG_ON(sizeof(struct cg_config) != 16);
 	BUILD_BUG_ON(sizeof(struct cg_allow) != 24);
 

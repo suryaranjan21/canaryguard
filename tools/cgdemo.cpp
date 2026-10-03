@@ -170,6 +170,12 @@ private:
         return run(std::move(args), who);
     }
 
+    void ctlQuiet(const std::vector<std::string>& args) {
+        std::vector<std::string> argv{"canaryctl"};
+        for (const std::string& a : args) argv.push_back(a);
+        run(argv, Who::Root, true);
+    }
+
     void ctl(const std::vector<std::string>& args) {
         std::string shown_text = "sudo canaryctl";
         std::vector<std::string> argv{"canaryctl"};
@@ -548,6 +554,24 @@ private:
 
         // input validation and security
         {
+            say("running 'plant' twice must not leave the bait unguarded (regression)");
+            {
+                dev_.clear();
+                ctlQuiet({"plant", bait_.string()});
+                size_t first = dev_.entries().size();
+                dev_.clear();
+                ctlQuiet({"plant", bait_.string()});          // the files already exist now
+                size_t second = dev_.entries().size();
+                check("a second 'plant' registers the same number of items (" + std::to_string(second) + ")",
+                      first == second && second == 6);
+                drain();
+                auto before = stats();
+                Outcome o = run({"truncate", "-s", "0", (bait_ / "Budget_2026.xlsx").string()}, Who::Invoker, true);
+                check("and the bait is really guarded after the second plant",
+                      o.killedByGuard() && stats().canary_hits == before.canary_hits + 1);
+                drain();
+            }
+
             say("the driver says no to bad requests");
             auto fails = [&](const std::function<void()>& fn, int wantErrno) {
                 try { fn(); } catch (const cg::Error& e) { return std::string(e.what()).find(std::strerror(wantErrno)) != std::string::npos; }
@@ -578,6 +602,58 @@ private:
             }
             check("the built-in SHA-256 matches the official test vector",
                   cg::Sha256::ofString("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        }
+
+        // evasion attempts
+        {
+            say("evasion: a hard link gives a canary a second, innocent-looking name");
+            fs::path canary = bait_ / "Budget_2026.xlsx";
+            fs::path link = bait_ / "innocent_name.xlsx";
+            std::error_code ec;
+            fs::create_hard_link(canary, link, ec);
+            if (ec) {
+                say("  (hard links are not available here, skipping)");
+            } else {
+                drain();
+                auto before = stats();
+                auto originalHash = cg::Sha256::ofFile(canary.string());
+                Outcome r = run({"ransim", "--snoop", link.string()}, Who::Invoker, true);
+                check("reading a canary through the hard link is not treated as an attack",
+                      r.ok() && stats().events == before.events);
+                Outcome w = run({"truncate", "-s", "100", link.string()}, Who::Invoker, true);
+                check("WRITING through the hard link is blocked and killed (we match the inode, not the name)",
+                      w.killedByGuard() && stats().canary_hits == before.canary_hits + 1 &&
+                          cg::Sha256::ofFile(canary.string()) == originalHash);
+                drain();
+                fs::remove(link, ec);
+            }
+
+            say("evasion: an attacker that starts a NEW PROCESS for every file");
+            dev_.clear();
+            dev_.resetStats();
+            dev_.add(CG_KIND_WATCHDIR, speed_.string());
+            drain();
+            Outcome a = run({"ransim", "--attack", speed_.string(), "--fork-per-file"}, Who::Invoker, true);
+            check("the speed check alone does NOT stop it: the count is per process (documented limitation)",
+                  a.ok() && sandbox::countLocked(speed_) == 20 && stats().speed_hits == 0);
+            restore(speed_);
+
+            dev_.clear();
+            dev_.resetStats();
+            ctlQuiet({"plant", speed_.string()});
+            Hashes baitBefore = hashBait(speed_);
+            run({"ransim", "--attack", speed_.string(), "--fork-per-file"}, Who::Invoker, true);
+            check("but the canary layer DOES stop it: every bait file is untouched",
+                  stats().canary_hits > 0 && hashBait(speed_) == baitBefore);
+            drain();
+            restore(speed_);
+
+            // leave the folders as the remaining checks expect them
+            dev_.clear();
+            dev_.resetStats();
+            ctlQuiet({"plant", bait_.string()});
+            ctlQuiet({"watch", speed_.string()});
+            drain();
         }
 
         // the live monitor (must be last: it reads the events itself)
