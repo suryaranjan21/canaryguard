@@ -342,5 +342,5 @@ Every ioctl argument is copied with `copy_from_user` / `copy_to_user` (user poin
 
 - **Same header, two languages:** `include/canaryguard_uapi.h` is included by the C kernel module and by the C++ tools. It uses only fixed-width types and explicit padding, and **both sides assert the size of every structure at build time** (`BUILD_BUG_ON` / `static_assert`).
 - **Two CPU types:** function arguments are read with the kernel's generic `regs_get_kernel_argument()` and the result is changed with `regs_set_return_value()`. Both exist for ARM64 and x86-64, so there is no CPU-specific code.
-- **Kernel versions:** the module is guarded for the API changes between 6.2 and 7.0 (`class_create` signature, `devnode` constness) and avoids interfaces that were removed (`no_llseek`). It was compile-tested without warnings against 6.8, 6.14, 6.17 and 7.0.
+- **Kernel versions:** the module is guarded for the API changes between 6.2 and 7.0 (`class_create` signature, `devnode` constness) and avoids interfaces that were removed (`no_llseek`). It was compile-tested without warnings against 6.8, 6.14, 6.17 and 7.0, and the whole test suite was run on 6.8 and 7.0.
 - **Build:** a standard out-of-tree Kbuild module (`kernel/Makefile`) driven by the top-level `Makefile`.

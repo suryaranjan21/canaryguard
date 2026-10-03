@@ -145,7 +145,7 @@ It refuses to touch a folder that lacks a marker file created by `ransim --setup
 ## D. Testing, performance, limits
 
 **43. How did you test it?**
-`make test` runs 44 automatic checks against the real driver: all three layers, warn mode, safe list, delete and rename of bait, a slow attacker, ring-buffer overflow, bad input, permissions, and the monitor. `make stress` does 20 load/unload cycles. I also ran a storm test (8 loops of heavy file activity, attackers being killed repeatedly, decoys rewritten continuously) and unloaded the driver in the middle of it: no crash or kernel warning. The driver compiles without warnings against kernels 6.8, 6.14, 6.17 and 7.0.
+`make test` runs 44 automatic checks against the real driver: all three layers, warn mode, safe list, delete and rename of bait, a slow attacker, ring-buffer overflow, bad input, permissions, and the monitor. `make stress` does 20 load/unload cycles. I also ran a storm test (8 loops of heavy file activity, attackers being killed repeatedly, decoys rewritten continuously) and unloaded the driver in the middle of it: no crash or kernel warning. The driver compiles without warnings against kernels 6.8, 6.14, 6.17 and 7.0, and all tests were run on 6.8 and 7.0.
 
 **44. Does it slow the system?**
 Measured: about 0.1 to 0.14 µs added per `open()` (569 ns to about 680-710 ns for open+close). When nothing is registered the hook does one atomic read and returns.

@@ -108,6 +108,7 @@ Clean up afterwards: `sudo make unload`. To delete the whole Multipass machine: 
 | `... Permission denied` from a tool | run it with `sudo` |
 | `make test` fails right at the start with *"contains something that is not a demo folder"* | an earlier run was interrupted: `sudo build/canaryctl clear && sudo rm -rf /var/tmp/canaryguard-demo`, then run it again |
 | The VM is very slow or will not start | check *Virtualization: Enabled* (step 0); give the VM 4 GB RAM and 2 CPUs; close other heavy programs |
+| `module verification failed: signature and/or required key missing - tainting kernel` in `dmesg` | harmless: Ubuntu notes that the module is not signed. The driver works normally |
 | `ransim` shows `Killed` | that is the **expected** result: the kernel killed the fake ransomware |
 | `rm` or `mv` of a bait file prints `Killed` | also expected: the guard protects its bait files. Run `sudo build/canaryctl clear` first if you really want to delete them |
 
@@ -118,5 +119,6 @@ Clean up afterwards: `sudo make unload`. To delete the whole Multipass machine: 
 | Machine | Ubuntu | Kernel | CPU | Result |
 |---------|--------|--------|-----|--------|
 | Development VM (Lima on a Mac) | 24.04.4 LTS | 6.8.0-134-generic | arm64 | 44 / 44 checks pass; stress and concurrency tests pass |
-| Build check only | 24.04 | 6.14.0-37, 6.17.0-42, 7.0.0-38 headers | arm64 | compiles without warnings |
+| Development VM, newest kernel | 24.04.4 LTS | 7.0.0-38-generic | arm64 | 44 / 44 checks pass; stress and concurrency tests pass |
+| Build check only | 24.04 | 6.14.0-37, 6.17.0-42 headers | arm64 | compiles without warnings |
 | Demo laptop | | | x86-64 | *(to be filled in after the first run: date, VM tool, `uname -r`, `uname -m`, result of `make test`)* |

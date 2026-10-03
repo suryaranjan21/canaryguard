@@ -194,9 +194,9 @@ canaryguard/
 | Load / unload | `make stress`: 20 cycles | no failure, no leak |
 | Concurrency | 8 loops of heavy file activity + two attackers being killed over and over + decoys rewritten continuously + **unloading the driver in the middle of it** | no crash, no kernel warning |
 | Overhead | open+close micro-benchmark | about **0.1 to 0.14 µs** added per `open()` (569 ns to about 680-710 ns) |
-| Kernel versions | built with extra warnings (`W=1`) against 6.8, 6.14, 6.17 and 7.0 headers | compiles without warnings |
+| Kernel versions | built with extra warnings (`W=1`) against 6.8, 6.14, 6.17 and 7.0 headers; the full suite and the stress tests were **run** on 6.8 and on 7.0 | compiles without warnings; all pass on both |
 
-Run on Ubuntu 24.04 (arm64, kernel 6.8.0-134). The build check for the newer kernels was done on arm64.
+Run on Ubuntu 24.04 (arm64) with kernels 6.8.0-134 and 7.0.0-38. The build check for 6.14 and 6.17 was done on arm64.
 
 ## Limitations (what it cannot do)
 
