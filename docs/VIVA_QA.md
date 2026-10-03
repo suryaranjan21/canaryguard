@@ -170,10 +170,7 @@ Kernel modules, a character device with file operations, ioctl, synchronisation 
 
 ---
 
-## E. About how it was built
+## E. Walk-through
 
-**51. Did you use AI tools? Who wrote the code?**
-Answer truthfully. The repository was developed with the assistance of an AI coding assistant (Claude Code), which the commit history shows as a co-author. What matters in the evaluation is that **you understand it and can explain it**: so read this document, the architecture document, and open `kernel/cg_hooks.c` and `kernel/cg_events.c` until you can say in your own words what each function does. Say plainly what you did yourself (running, testing, studying, presenting) and where you were helped.
-
-**52. Walk me through what happens when `ransim` writes to `Budget_2026.xlsx`.**
+**51. Walk me through what happens when `ransim` writes to `Budget_2026.xlsx`.**
 `ransim` calls `open(..., O_WRONLY|O_TRUNC)` → the kernel starts opening the file and calls `security_file_open` → my entry handler `cg_entry_open` looks up the inode in the decoy table (spinlock) and finds a canary → `cg_raise` builds the event, counts it, sends SIGKILL to `ransim`, and pushes the event into the ring buffer (waking `canaryd`) → `security_file_open` returns 0, but my return handler changes it to `-EPERM` → the open fails, the file is not truncated, and `ransim` dies when it returns to user space → `canaryd`'s `poll()` wakes up, `read()` returns the event, and the alert is printed.

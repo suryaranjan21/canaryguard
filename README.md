@@ -230,5 +230,3 @@ GPL-2.0 (see [LICENSE](LICENSE)). The kernel module must be GPL because it uses 
 ## Author
 
 Suryaranjan Sahoo ([@suryaranjan21](https://github.com/suryaranjan21))
-
-Developed with the assistance of Claude Code (Anthropic); the commit history records this as a co-author.
