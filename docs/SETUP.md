@@ -31,7 +31,7 @@ Multipass, from Canonical (the makers of Ubuntu), creates Ubuntu virtual machine
 
    You are now inside Ubuntu. Everything below is typed there.
 
-3. Get the code. If the repository is **public**:
+3. Get the code (the repository is public):
 
    ```bash
    sudo apt-get update && sudo apt-get install -y git
@@ -39,13 +39,15 @@ Multipass, from Canonical (the makers of Ubuntu), creates Ubuntu virtual machine
    cd canaryguard
    ```
 
-   If it is **private**: on GitHub press **Code → Download ZIP**, then in PowerShell (not inside the VM):
+   If `git clone` does not work (some networks block it), on GitHub press **Code → Download ZIP**, then in PowerShell (not inside the VM):
 
    ```powershell
    multipass transfer $HOME\Downloads\canaryguard-main.zip guard:/home/ubuntu/
    ```
 
    and inside the VM: `sudo apt-get install -y unzip && unzip canaryguard-main.zip && cd canaryguard-main`
+
+> **Time limit:** if Option A is not working after about 20 minutes, stop and switch to Option B. Do not spend the day debugging the installer: the project itself needs only about 10 minutes once Ubuntu is running.
 
 ### Option B: VirtualBox with the Ubuntu Desktop ISO
 
