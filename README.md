@@ -4,99 +4,63 @@
 
 ![kernel](https://img.shields.io/badge/kernel-C-00599C) ![tools](https://img.shields.io/badge/tools-C%2B%2B17-659ad2) ![platform](https://img.shields.io/badge/Linux-6.8%E2%80%937.0-FCC624?logo=linux&logoColor=black) ![tests](https://img.shields.io/badge/tests-50%2F50%20passing-success) ![license](https://img.shields.io/badge/license-GPL--2.0-blue)
 
-Ransomware locks your files one by one and then asks for money. A shop that leaves a dummy wallet on the counter catches thieves the same way: honest customers never touch it, a thief grabs it, and the alarm goes off. CanaryGuard does this for files. It sits **inside the kernel**, where every file operation has to pass, and sets three traps. Whichever one the attacker steps on, the attack is cut off halfway.
+Think of a dummy wallet left on a shop counter: honest customers ignore it, a thief grabs it, the alarm rings. CanaryGuard does that for files, **inside the kernel**, where every file operation has to pass.
 
-[Examples](#three-attacks-three-catches) · [Run it](#run-it-yourself) · [How it works](#how-it-works) · [Tests](#tested) · [Limits](#limitations) · [Docs](#documentation)
+[Watch it work](#watch-it-stop-three-different-attacks) · [Run it](#run-it) · [How it works](#how-it-works) · [Tests](#tested) · [Limits](#limits) · [Docs](#docs)
 
-> Capstone project for the Wipro Embedded Track (Linux System Programming + Linux Device Drivers). Kernel driver in **C**, tools in **C++17**, Linux only.
+> Capstone project, Wipro Embedded Track (Linux System Programming + Linux Device Drivers). Kernel driver in **C**, tools in **C++17**, Linux only.
 
 ---
 
-## Three attacks, three catches
+## Watch it stop three different attacks
 
-The attacker below is `ransim`, a **harmless** ransomware imitation that only works on demo folders and can undo its own damage. Each example uses a different trick, and each trap catches a different one. The output is from the real demo run; paths are shortened and the PIDs and user name are just examples.
+Same harmless attacker (`ransim`), three different tricks, three traps. Each replay loops.
 
-### 1. The attacker hits a bait file (canary files)
+### 1 · It hits a bait file: **canary files**
+> Fake documents no real user ever edits. Touch one and the process is killed.
 
-Bait documents such as `Budget_2026.xlsx` are planted among the real ones: `canaryctl plant ~/documents`. No real user ever edits them, so anyone who does is not a user.
+![Replay: ransim hits the bait file Budget_2026.xlsx on its 4th file and is killed. 3 files lost, 21 untouched.](docs/images/attack-canary.svg)
 
-```console
-$ ransim --attack ~/documents
-  [ 1/25] encrypting Agreement_Rent.docx
-  [ 2/25] encrypting Agreement_Vehicle.docx
-  [ 3/25] encrypting Appraisal_Letter.pdf
-  [ 4/25] encrypting Budget_2026.xlsx          <-- a bait file
-Killed                                         <-- the kernel stopped it here
-```
-```text
-KILLED  ransim[9138] uid=1000(student) tried to write to canary file ~/documents/Budget_2026.xlsx
-        -> operation blocked, process killed
-```
-**Result:** 3 files lost. The other 21 were never touched, and the bait file is intact, byte for byte.
+### 2 · It skips the bait but is far too fast: **speed check**
+> No human changes 10 different files in 2 seconds. A program does.
 
-### 2. The attacker avoids the bait but works too fast (speed check)
+![Replay: with no bait at all, ransim is killed at its 10th file within 2 seconds. 9 files lost.](docs/images/attack-speed.svg)
 
-A smarter attacker skips the bait. Here the folder has **no bait at all**, it is only watched: `canaryctl watch ~/projects`. A person does not change 10 different files in 2 seconds. A program does.
+### 3 · Someone snoops for passwords: **honeytoken**
+> A fake `passwords.txt`. Reading it raises an alert. Changing it gets you killed.
 
-```console
-$ ransim --attack ~/projects
-  [ 8/20] encrypting Exam_Timetable.xlsx
-  [ 9/20] encrypting Holiday_Photo_01.jpg
-  [10/20] encrypting Holiday_Photo_02.jpg      <-- the 10th file in under 2 seconds
-Killed
-```
-```text
-KILLED  ransim[9201] uid=1000(student) changed 10 files within 2000 ms in ~/projects
-        (last: Holiday_Photo_02.jpg)  -> operation blocked, process killed
-```
-**Result:** 9 files lost, the 10th was refused. It was caught by what it did, not by what it touched.
+![Replay: cat reads the fake passwords.txt, is not killed, but an alert names the program, user and time.](docs/images/attack-honeytoken.svg)
 
-### 3. Someone snoops for passwords (honeytoken)
-
-A fake `passwords.txt` sits in the folder. Its content is made up, and nobody honest needs it. A thief searching for saved passwords will open it.
-
-```console
-$ cat ~/documents/passwords.txt
-Gmail        student.demo@example.com     Summer#2026!
-Net banking  demo_user_4821               Blue$Horse9
-```
-```text
-ALERT   cat[9300] uid=1000(student) read honeytoken ~/documents/passwords.txt
-```
-**Result:** reading is only suspicious, so `cat` is not killed, but you now know **which program, which user and which second**. Changing or deleting the honeytoken is treated as an attack and gets the process killed.
-
-### What it saved
+### What it saves
 
 ![Files encrypted before the attack stopped: 20 with no protection, 3 with canary files, 9 with the speed check](docs/images/results.svg)
 
-| Trap | Catches | Reaction |
-|---|---|---|
-| **Canary files** | anyone who changes, deletes or renames a bait file | block it and **kill the process** |
-| **Speed check** | one process changing 10 different files within 2 seconds | block it and **kill the process** |
-| **Honeytoken** | anyone who reads the fake secrets | **alert**: program, PID, user (changing it is killed) |
+<details>
+<summary><b>Why three traps and not one?</b></summary>
 
-### Why three, not one
+Each one covers a hole in the others, and the test suite proves every case:
 
-Each trap covers a hole in the others, and the test suite proves every case:
+- **too slow** for the speed check? It still dies at the first canary.
+- **avoids the bait**? The speed check catches it.
+- **renames or hard-links a canary**? Nothing gained: matching is by inode, not by name.
+- **new process for every file**? Escapes the speed check, not the canaries.
 
-- an attacker that is **too slow** for the speed check still dies at the first canary
-- an attacker that **avoids the bait** is caught by the speed check
-- an attacker that **renames a canary or hard-links it** gains nothing: matching is by inode, not by name
-- an attacker that **starts a new process for every file** escapes the speed check, but not the canaries
+</details>
 
-## Run it yourself
+*The output in the replays is from the real demo run. Paths are shortened, and PIDs and the user name are examples.*
 
-Inside an Ubuntu VM ([how to get one](docs/SETUP.md); a kernel driver should never be a first experiment on a machine you care about):
+## Run it
+
+Inside an Ubuntu VM ([how to get one](docs/SETUP.md)). A kernel driver should never be a first experiment on a machine you care about.
 
 ```bash
 make deps     # once: compiler and the headers of your running kernel
 make          # build the driver and the four tools
-make demo     # the narrated live demo, about 3 minutes (Enter between the five acts)
+make demo     # the narrated live demo, about 3 minutes (Enter between acts)
 ```
 
-`make test` runs the same story without pauses and prints 50 PASS/FAIL checks.
-
-**There is no GUI and no web page.** This is a kernel driver, so it lives in the terminal and in `/dev`, `/sys` and `dmesg`, which is where a driver belongs.
+`make test` runs the same story without pauses: 50 PASS/FAIL checks.
+There is **no GUI**. A driver lives in the terminal, `/dev`, `/sys` and `dmesg`.
 
 ## How it works
 
@@ -128,12 +92,15 @@ flowchart TB
     VFS -->|"permission checks are hooked"| HOOK
 ```
 
-1. **Seeing everything.** The kernel runs a permission check before every open, delete and rename. The driver attaches a **kretprobe** to `security_file_open`, `security_inode_unlink` and `security_inode_rename`: one handler inspects the request on the way in, another can change the answer on the way out.
-2. **Deciding.** A spinlock-protected table holds the decoys (matched by inode) and the watched folders (matched by directory ancestry).
-3. **Reacting.** The permission check is made to fail with `-EPERM`, so the file is never even truncated, and the offender gets `SIGKILL`.
-4. **Reporting.** A kernel hook may not sleep, so it only drops a record into a **kfifo ring buffer** and wakes the monitor; a **workqueue** writes to the kernel log afterwards. If the buffer is ever full, the loss is counted and reported, never silent.
+| Step | What happens |
+|---|---|
+| **See** | kretprobes on `security_file_open`, `security_inode_unlink`, `security_inode_rename` |
+| **Decide** | a spinlock-protected table of decoys (by inode) and watched folders |
+| **React** | the permission check fails with `-EPERM` and the offender gets `SIGKILL` |
+| **Report** | hook drops a record in a kfifo ring buffer; a workqueue logs it, `canaryd` shows it |
 
-**One attack, step by step** (example 1 above):
+<details>
+<summary><b>Replay one attack, step by step</b></summary>
 
 ```mermaid
 sequenceDiagram
@@ -151,17 +118,22 @@ sequenceDiagram
     M->>M: print KILLED ransim[9138] ...
 ```
 
-The full design, the UML diagrams and the reasoning behind every choice: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+</details>
+
+Full design, UML and the reasoning behind every choice: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## The programs
 
 | Program | Lang | Role |
 |---|---|---|
-| `canaryguard.ko` | C | the driver: `/dev/canaryguard`, the three traps, block and kill, the alert queue |
-| `canaryctl` | C++ | control panel: plant bait, list, statistics, modes, limits, safe list |
+| `canaryguard.ko` | C | the driver: `/dev/canaryguard`, the three traps, block and kill, alert queue |
+| `canaryctl` | C++ | control panel: plant bait, list, stats, modes, limits, safe list |
 | `canaryd` | C++ | live monitor: colour alerts, log file, daemon mode, SHA-256 integrity check |
-| `ransim` | C++ | a **harmless** ransomware imitation: demo folders only, fully reversible |
+| `ransim` | C++ | a **harmless** ransomware imitation, fully reversible |
 | `cgdemo` | C++ | the narrated demo and the 50-check test suite |
+
+<details>
+<summary><b>Commands to try</b></summary>
 
 ```bash
 make load                                  # load the driver
@@ -176,7 +148,16 @@ sudo build/canaryctl clear                 # stop guarding everything
 
 Settings also work at load time (`sudo insmod kernel/canaryguard.ko mode=0 speed_threshold=20`), appear under `/sys/module/canaryguard/parameters/`, and live counters under `/sys/class/canaryguard/canaryguard/stats`.
 
+</details>
+
 ## Tested
+
+| **50 / 50** | **6.8 and 7.0** | **+0.11 to +0.14 µs** | **20 / 20** |
+|:---:|:---:|:---:|:---:|
+| checks pass | kernels, full suite run | added to each `open()` | load/unload cycles |
+
+<details>
+<summary><b>Full test table</b></summary>
 
 | What | How | Result |
 |---|---|---|
@@ -189,30 +170,37 @@ Settings also work at load time (`sudo insmod kernel/canaryguard.ko mode=0 speed
 
 Measured on Ubuntu 24.04, arm64, kernels 6.8.0-134 and 7.0.0-38.
 
-## Limitations
+</details>
+
+## Limits
 
 Stated plainly, because knowing them is part of the design:
 
-- It **limits** damage, it does not undo it: files encrypted before the catch stay encrypted (3 of them in example 1).
-- A **slow** attacker passes the speed check, and so does one that **starts a new process per file**. Both still die at a canary.
-- Bulk work inside a watched folder (copying 12 files at once) looks like an attack: use `mode warn`, `allow`, or a higher limit.
+- It **limits** damage, it does not undo it: files encrypted before the catch stay encrypted.
+- A **slow** attacker, or one that **starts a new process per file**, passes the speed check (both still die at a canary).
+- Bulk work in a watched folder (copying 12 files at once) looks like an attack: use `mode warn`, `allow`, or a higher limit.
 - The safe list matches **process names**, which can be imitated.
-- **Root can unload the driver.** This defends against malware running as a user, not against a full takeover.
-- A file that was **already open** before it was registered can still be written; the monitor's SHA-256 check is the backstop.
+- **Root can unload the driver.** It defends against malware running as a user, not a full takeover.
+- A file **already open** before it was registered can still be written; the SHA-256 check is the backstop.
 - A learning prototype, **not a production security product**.
 
-**Safety.** Only root can control the driver (`/dev/canaryguard` is mode 0600, plus a `CAP_SYS_ADMIN` check on every command). It refuses to watch system folders (`/`, `/usr`, `/etc`, ...). It never kills kernel threads, `init`, or its own tools. `ransim` only touches folders that carry a marker file it created itself.
+<details>
+<summary><b>Safety rules built in</b></summary>
 
-## Documentation
+Only root can control the driver (`/dev/canaryguard` is mode 0600, plus a `CAP_SYS_ADMIN` check on every command). It refuses to watch system folders (`/`, `/usr`, `/etc`, ...). It never kills kernel threads, `init`, or its own tools. `ransim` only touches folders that carry a marker file it created itself.
+
+</details>
+
+## Docs
 
 | | |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | design, data flow, UML diagrams, every design decision and the alternatives |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | design, data flow, UML diagrams, every decision and the alternatives |
 | [REQUIREMENTS.md](docs/REQUIREMENTS.md) | requirements traced to the tests that verify them, plan, risks |
 | [SETUP.md](docs/SETUP.md) | getting Ubuntu on Windows, building, troubleshooting |
 
 <details>
-<summary><b>Course concepts used</b> (click to expand)</summary>
+<summary><b>Course concepts used</b></summary>
 
 | Module | Where it appears |
 |---|---|
@@ -249,19 +237,13 @@ canaryguard/
 ├── tools/                  user space (C++17)
 │   ├── canaryctl.cpp  canaryd.cpp  ransim.cpp  cgdemo.cpp
 │   └── cg_common.hpp  sandbox.hpp  sha256.hpp
-└── docs/
+└── docs/                   architecture, requirements, setup, images
 ```
 
 </details>
 
-## Future work
+**Future work:** the Domain 4 ideas left out on purpose (a syscall auditor and zero-trust agent, a rootkit and memory-guard subsystem, a virtual TPM), plus snapshot recovery, identifying programs by hash, per-user policies and an eBPF variant.
 
-The Domain 4 ideas deliberately left out, each a project in its own right: a syscall auditor and zero-trust behaviour agent, a rootkit and memory-guard subsystem, and a virtual TPM key enclave. For CanaryGuard itself: snapshot-based recovery, identifying programs by hash instead of by name, per-user policies, and an eBPF variant.
+**License:** GPL-2.0 ([LICENSE](LICENSE)). The module must be GPL because kprobes are a GPL-only kernel interface.
 
-## License
-
-GPL-2.0 ([LICENSE](LICENSE)). The module must be GPL because kprobes are a GPL-only kernel interface.
-
-## Author
-
-Suryaranjan Sahoo ([@suryaranjan21](https://github.com/suryaranjan21))
+**Author:** Suryaranjan Sahoo ([@suryaranjan21](https://github.com/suryaranjan21))

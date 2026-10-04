@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="324" viewBox="0 0 860 324" role="img" aria-label="1  canary files   ·   the attacker hits a bait file">
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:14px;white-space:pre}
+@keyframes k0{0%,3.33%{opacity:0}3.93%,90%{opacity:1}96%,100%{opacity:0}}.a0{animation:k0 9.0s linear infinite}
+@keyframes k1{0%,12.22%{opacity:0}12.82%,90%{opacity:1}96%,100%{opacity:0}}.a1{animation:k1 9.0s linear infinite}
+@keyframes k2{0%,18.89%{opacity:0}19.49%,90%{opacity:1}96%,100%{opacity:0}}.a2{animation:k2 9.0s linear infinite}
+@keyframes k3{0%,25.56%{opacity:0}26.16%,90%{opacity:1}96%,100%{opacity:0}}.a3{animation:k3 9.0s linear infinite}
+@keyframes k4{0%,32.22%{opacity:0}32.82%,90%{opacity:1}96%,100%{opacity:0}}.a4{animation:k4 9.0s linear infinite}
+@keyframes k5{0%,40.00%{opacity:0}40.60%,90%{opacity:1}96%,100%{opacity:0}}.a5{animation:k5 9.0s linear infinite}
+@keyframes k6{0%,40.00%{opacity:0}40.60%,90%{opacity:1}96%,100%{opacity:0}}.a6{animation:k6 9.0s linear infinite}
+@keyframes k7{0%,48.89%{opacity:0}49.49%,90%{opacity:1}96%,100%{opacity:0}}.a7{animation:k7 9.0s linear infinite}
+@keyframes k8{0%,48.89%{opacity:0}49.49%,90%{opacity:1}96%,100%{opacity:0}}.a8{animation:k8 9.0s linear infinite}
+@keyframes k99{0%,57.78%{opacity:0}58.38%,90%{opacity:1}96%,100%{opacity:0}}.a99{animation:k99 9.0s linear infinite}
+</style>
+<rect width="860" height="324" rx="12" fill="#0d1117" stroke="#30363d"/>
+<path d="M0 12a12 12 0 0 1 12-12h836a12 12 0 0 1 12 12v24H0z" fill="#161b22"/>
+<circle cx="22" cy="18" r="6" fill="#ff5f56"/><circle cx="42" cy="18" r="6" fill="#ffbd2e"/><circle cx="62" cy="18" r="6" fill="#27c93f"/>
+<text x="84" y="23" fill="#8b949e" style="font-size:13px">1  canary files   ·   the attacker hits a bait file</text>
+<text class="a0" x="22" y="56" xml:space="preserve"><tspan fill="#3fb950">$ </tspan><tspan fill="#c9d1d9">ransim --attack ~/documents</tspan></text>
+<text class="a1" x="22" y="78" xml:space="preserve"><tspan fill="#8b949e">  [ 1/25] encrypting Agreement_Rent.docx</tspan></text>
+<text class="a2" x="22" y="100" xml:space="preserve"><tspan fill="#8b949e">  [ 2/25] encrypting Agreement_Vehicle.docx</tspan></text>
+<text class="a3" x="22" y="122" xml:space="preserve"><tspan fill="#8b949e">  [ 3/25] encrypting Appraisal_Letter.pdf</tspan></text>
+<text class="a4" x="22" y="144" xml:space="preserve"><tspan fill="#e3b341">  [ 4/25] encrypting Budget_2026.xlsx</tspan><tspan fill="#e3b341">      &lt;-- a bait file</tspan></text>
+<text class="a5" x="22" y="166" xml:space="preserve"><tspan fill="#ff7b72">Killed</tspan></text>
+<text class="a6" x="22" y="188" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="a7" x="22" y="210" xml:space="preserve"><tspan fill="#ff7b72">KILLED </tspan><tspan fill="#c9d1d9">ransim[9138] uid=1000(student) tried to write to canary file</tspan></text>
+<text class="a8" x="22" y="232" xml:space="preserve"><tspan fill="#c9d1d9">       ~/documents/Budget_2026.xlsx  -&gt; operation blocked, process killed</tspan></text>
+<g class="a99"><rect x="22" y="268" width="514" height="34" rx="8" fill="#3fb950" fill-opacity="0.14" stroke="#3fb950" stroke-opacity="0.7"/><text x="40" y="290" fill="#3fb950" font-weight="700" xml:space="preserve">3 files lost  ·  21 untouched  ·  the bait file is intact</text></g>
+</svg>

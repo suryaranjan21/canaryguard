@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="324" viewBox="0 0 860 324" role="img" aria-label="2  speed check   ·   no bait at all, but far too fast">
+<style>
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:14px;white-space:pre}
+@keyframes k0{0%,3.49%{opacity:0}4.09%,90%{opacity:1}96%,100%{opacity:0}}.a0{animation:k0 8.6s linear infinite}
+@keyframes k1{0%,12.79%{opacity:0}13.39%,90%{opacity:1}96%,100%{opacity:0}}.a1{animation:k1 8.6s linear infinite}
+@keyframes k2{0%,17.44%{opacity:0}18.04%,90%{opacity:1}96%,100%{opacity:0}}.a2{animation:k2 8.6s linear infinite}
+@keyframes k3{0%,22.09%{opacity:0}22.69%,90%{opacity:1}96%,100%{opacity:0}}.a3{animation:k3 8.6s linear infinite}
+@keyframes k4{0%,29.07%{opacity:0}29.67%,90%{opacity:1}96%,100%{opacity:0}}.a4{animation:k4 8.6s linear infinite}
+@keyframes k5{0%,37.21%{opacity:0}37.81%,90%{opacity:1}96%,100%{opacity:0}}.a5{animation:k5 8.6s linear infinite}
+@keyframes k6{0%,37.21%{opacity:0}37.81%,90%{opacity:1}96%,100%{opacity:0}}.a6{animation:k6 8.6s linear infinite}
+@keyframes k7{0%,46.51%{opacity:0}47.11%,90%{opacity:1}96%,100%{opacity:0}}.a7{animation:k7 8.6s linear infinite}
+@keyframes k8{0%,46.51%{opacity:0}47.11%,90%{opacity:1}96%,100%{opacity:0}}.a8{animation:k8 8.6s linear infinite}
+@keyframes k99{0%,55.81%{opacity:0}56.41%,90%{opacity:1}96%,100%{opacity:0}}.a99{animation:k99 8.6s linear infinite}
+</style>
+<rect width="860" height="324" rx="12" fill="#0d1117" stroke="#30363d"/>
+<path d="M0 12a12 12 0 0 1 12-12h836a12 12 0 0 1 12 12v24H0z" fill="#161b22"/>
+<circle cx="22" cy="18" r="6" fill="#ff5f56"/><circle cx="42" cy="18" r="6" fill="#ffbd2e"/><circle cx="62" cy="18" r="6" fill="#27c93f"/>
+<text x="84" y="23" fill="#8b949e" style="font-size:13px">2  speed check   ·   no bait at all, but far too fast</text>
+<text class="a0" x="22" y="56" xml:space="preserve"><tspan fill="#3fb950">$ </tspan><tspan fill="#c9d1d9">ransim --attack ~/projects</tspan></text>
+<text class="a1" x="22" y="78" xml:space="preserve"><tspan fill="#8b949e">  [ 1/20] encrypting Agreement_Rent.docx</tspan></text>
+<text class="a2" x="22" y="100" xml:space="preserve"><tspan fill="#8b949e">  ...</tspan></text>
+<text class="a3" x="22" y="122" xml:space="preserve"><tspan fill="#8b949e">  [ 9/20] encrypting Holiday_Photo_01.jpg</tspan></text>
+<text class="a4" x="22" y="144" xml:space="preserve"><tspan fill="#e3b341">  [10/20] encrypting Holiday_Photo_02.jpg</tspan><tspan fill="#e3b341">      &lt;-- the 10th file within 2 seconds</tspan></text>
+<text class="a5" x="22" y="166" xml:space="preserve"><tspan fill="#ff7b72">Killed</tspan></text>
+<text class="a6" x="22" y="188" xml:space="preserve"><tspan fill="#c9d1d9"></tspan></text>
+<text class="a7" x="22" y="210" xml:space="preserve"><tspan fill="#ff7b72">KILLED </tspan><tspan fill="#c9d1d9">ransim[9201] uid=1000(student) changed 10 files within 2000 ms</tspan></text>
+<text class="a8" x="22" y="232" xml:space="preserve"><tspan fill="#c9d1d9">       in ~/projects (last: Holiday_Photo_02.jpg)  -&gt; operation blocked, process killed</tspan></text>
+<g class="a99"><rect x="22" y="268" width="657" height="34" rx="8" fill="#3fb950" fill-opacity="0.14" stroke="#3fb950" stroke-opacity="0.7"/><text x="40" y="290" fill="#3fb950" font-weight="700" xml:space="preserve">9 files lost  ·  the 10th was refused  ·  caught by behaviour, not by name</text></g>
+</svg>
