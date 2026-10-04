@@ -23,8 +23,8 @@ Ransomware encrypts every file it can reach, quickly, one after another. Ordinar
 
 | ID | Requirement | Implemented in | Verified by (`make test`) |
 |----|-------------|----------------|---------------------------|
-| FR-1 | The administrator can register bait files (canaries, honeytokens) and watched folders | `cg_table.c`, `canaryctl plant / watch` | Act 2 and 3: `canaryctl plant`, `watch`; "refuses to register the same file twice" |
-| FR-2 | A write, delete or rename of a canary is **blocked**, the process is **killed**, and an alert is raised | `cg_hooks.c` (`cg_inspect_*`, `cg_ret_handler`) | "ransim was KILLED by the kernel", "the canary files are untouched", "rm was killed and the canary still exists", "mv was killed and the canary kept its name" |
+| FR-1 | The administrator can register bait files (canaries, honeytokens) and watched folders | `cg_table.c`, `canaryctl plant / watch` | Act 2 and 3: `canaryctl plant`, `watch`; "refuses to register the same file twice"; "a second 'plant' registers the same number of items", "the bait is really guarded after the second plant" |
+| FR-2 | A write, delete or rename of a canary is **blocked**, the process is **killed**, and an alert is raised | `cg_hooks.c` (`cg_inspect_*`, `cg_ret_handler`) | "ransim was KILLED by the kernel", "the canary files are untouched", "rm was killed and the canary still exists", "mv was killed and the canary kept its name", "WRITING through the hard link is blocked and killed", "the canary layer DOES stop it: every bait file is untouched" |
 | FR-3 | Reading a honeytoken raises an alert **without** killing the reader | `cg_hooks.c` | "cat was NOT killed", "the driver raised a honeytoken alert" |
 | FR-4 | A process changing more than N different files within T ms in a watched folder is blocked and killed; N and T are configurable | `cg_hooks.c` (`cg_speed_note`) | "only 9 files were encrypted: the 10th file was protected"; "refuses a speed limit of 1 file" |
 | FR-5 | A *warn* mode reports without blocking | `cg_mode`, `canaryctl mode` | "warn mode: ransim ran to the end", "the driver only alerted" |
@@ -82,7 +82,7 @@ Solo project; the plan follows the build order, and each step was tested before 
 | M2 | Driver core | `/dev/canaryguard`, decoy table, ioctl, sysfs | 3 Oct |
 | M3 | Detection | canary + honeytoken + speed check, block and kill | 3 Oct |
 | M4 | Alert pipeline | ring buffer, workqueue, `canaryd` | 3 Oct |
-| M5 | Demo and tests | `ransim`, `cgdemo`, 44 checks green, stress and concurrency tests | 3 Oct |
+| M5 | Demo and tests | `ransim`, `cgdemo`, 50 checks green, stress and concurrency tests | 3 Oct |
 | M6 | Documentation | README, architecture, requirements, setup, demo script, Q&A | 3 to 4 Oct |
 | M7 | Validation on the demo machine (Intel/AMD laptop) | `make test` passes there | 4 Oct |
 | M8 | Submission | final push to GitHub, repository public | by 5 Oct |

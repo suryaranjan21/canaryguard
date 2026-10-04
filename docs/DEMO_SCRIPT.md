@@ -13,7 +13,7 @@ The evaluation is 5 to 10 minutes. This script fits the demo into 5 and leaves t
    sudo build/canaryctl clear 2>/dev/null; sudo pkill canaryd
    ```
 
-3. Run the full test once: `make test`. It must end with **44 passed, 0 failed**.
+3. Run the full test once: `make test`. It must end with **50 passed, 0 failed**.
 4. Open the GitHub page of the repository in the browser (the README with the architecture diagram).
 5. Leave the terminal ready at the project folder. Do **not** start `canaryd` yourself: `make demo` starts its own monitor.
 

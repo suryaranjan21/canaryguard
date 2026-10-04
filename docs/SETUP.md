@@ -69,14 +69,14 @@ Choose this if you want a full Ubuntu desktop on screen.
 ```bash
 make deps     # once: build tools + headers of the running kernel (asks for your password)
 make          # builds the driver (kernel/canaryguard.ko) and the tools (build/)
-make test     # loads the driver, runs the 44 automatic checks
+make test     # loads the driver, runs the 50 automatic checks
 make demo     # the guided live demo
 ```
 
 **What success looks like:** `make test` ends with
 
 ```text
-  44 passed, 0 failed
+  50 passed, 0 failed
   ALL CHECKS PASSED
 ```
 
@@ -118,7 +118,7 @@ Clean up afterwards: `sudo make unload`. To delete the whole Multipass machine: 
 
 | Machine | Ubuntu | Kernel | CPU | Result |
 |---------|--------|--------|-----|--------|
-| Development VM (Lima on a Mac) | 24.04.4 LTS | 6.8.0-134-generic | arm64 | 44 / 44 checks pass; stress and concurrency tests pass |
-| Development VM, newest kernel | 24.04.4 LTS | 7.0.0-38-generic | arm64 | 44 / 44 checks pass; stress and concurrency tests pass |
+| Development VM (Lima on a Mac) | 24.04.4 LTS | 6.8.0-134-generic | arm64 | 50 / 50 checks pass; stress and concurrency tests pass |
+| Development VM, newest kernel | 24.04.4 LTS | 7.0.0-38-generic | arm64 | 50 / 50 checks pass; stress and concurrency tests pass |
 | Build check only | 24.04 | 6.14.0-37, 6.17.0-42 headers | arm64 | compiles without warnings |
 | Demo laptop | | | x86-64 | *(to be filled in after the first run: date, VM tool, `uname -r`, `uname -m`, result of `make test`)* |
