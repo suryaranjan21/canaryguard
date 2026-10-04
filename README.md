@@ -1,10 +1,10 @@
 # CanaryGuard
 
-**A Linux kernel driver that catches ransomware in the act and kills it.**
+**A Linux kernel driver that catches ransomware halfway through its attack and kills it.**
 
 ![kernel](https://img.shields.io/badge/kernel-C-00599C) ![tools](https://img.shields.io/badge/tools-C%2B%2B17-659ad2) ![platform](https://img.shields.io/badge/Linux-6.8%E2%80%937.0-FCC624?logo=linux&logoColor=black) ![tests](https://img.shields.io/badge/tests-50%2F50%20passing-success) ![license](https://img.shields.io/badge/license-GPL--2.0-blue)
 
-Ransomware encrypts your files one after another and then demands money. Every program has to ask the **kernel** before it touches a file, so CanaryGuard puts a guard at exactly that gate: it cannot be bypassed from user space, and it stops the attacker in the middle of its run.
+Ransomware locks your files one after another and then asks for money. But to touch any file, a program has to ask the **kernel** first. CanaryGuard stands at that gate. Nothing in user space can skip it, and the attacker is stopped in the middle of the run, not after it.
 
 ```console
 $ ransim --attack ~/documents          # a harmless ransomware imitation
@@ -22,6 +22,20 @@ Killed                                         <-- the kernel stopped it here
 ```
 
 The other 21 files were never touched, and the bait file itself is intact, byte for byte.
+
+### What that is worth
+
+Same attacker, same kind of folder, three setups (numbers from `make test`):
+
+```mermaid
+xychart-beta
+    title "Files encrypted before the attack stopped"
+    x-axis ["No protection", "Canary files", "Speed check"]
+    y-axis "files encrypted" 0 --> 25
+    bar [20, 3, 9]
+```
+
+With no guard all 20 files go. The canary layer stops it after 3. The speed check, with no bait at all, stops it after 9: the 10th file is the one it refuses.
 
 > Capstone project for the Wipro Embedded Track (Linux System Programming + Linux Device Drivers). Kernel driver in **C**, user-space tools in **C++17**, Linux only.
 
@@ -90,6 +104,24 @@ flowchart TB
 2. **Deciding.** A spinlock-protected table holds the decoys (matched by inode) and the watched folders (matched by directory ancestry).
 3. **Reacting.** The permission check is made to fail with `-EPERM`, so the file is never even truncated, and the offender gets `SIGKILL`.
 4. **Reporting.** A kernel hook may not sleep, so it only drops a record into a **kfifo ring buffer** and wakes the monitor; a **workqueue** writes to the kernel log afterwards. If the buffer is ever full, the loss is counted and reported, never silent.
+
+**One attack, step by step:**
+
+```mermaid
+sequenceDiagram
+    participant R as ransim (attacker)
+    participant K as kernel file layer
+    participant G as canaryguard.ko
+    participant M as canaryd (monitor)
+    R->>K: open Budget_2026.xlsx for writing
+    K->>G: permission check (kretprobe fires)
+    G->>G: is this inode a canary? yes
+    G-->>K: answer changed to -EPERM
+    G-->>R: SIGKILL
+    G->>G: record dropped into the ring buffer
+    G-->>M: wake up (poll)
+    M->>M: print KILLED ransim[9138] ...
+```
 
 The full design, the UML diagrams and the reasoning behind every choice: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
