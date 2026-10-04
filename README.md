@@ -1,63 +1,97 @@
 # CanaryGuard
 
-**A Linux kernel driver that catches ransomware halfway through its attack and kills it.**
+**A guard inside the Linux kernel that stops ransomware while it is still attacking.**
 
 ![kernel](https://img.shields.io/badge/kernel-C-00599C) ![tools](https://img.shields.io/badge/tools-C%2B%2B17-659ad2) ![platform](https://img.shields.io/badge/Linux-6.8%E2%80%937.0-FCC624?logo=linux&logoColor=black) ![tests](https://img.shields.io/badge/tests-50%2F50%20passing-success) ![license](https://img.shields.io/badge/license-GPL--2.0-blue)
 
-Ransomware locks your files one after another and then asks for money. But to touch any file, a program has to ask the **kernel** first. CanaryGuard stands at that gate. Nothing in user space can skip it, and the attacker is stopped in the middle of the run, not after it.
+Ransomware locks your files one by one and then asks for money. A shop that leaves a dummy wallet on the counter catches thieves the same way: honest customers never touch it, a thief grabs it, and the alarm goes off. CanaryGuard does this for files. It sits **inside the kernel**, where every file operation has to pass, and sets three traps. Whichever one the attacker steps on, the attack is cut off halfway.
+
+[Examples](#three-attacks-three-catches) · [Run it](#run-it-yourself) · [How it works](#how-it-works) · [Tests](#tested) · [Limits](#limitations) · [Docs](#documentation)
+
+> Capstone project for the Wipro Embedded Track (Linux System Programming + Linux Device Drivers). Kernel driver in **C**, tools in **C++17**, Linux only.
+
+---
+
+## Three attacks, three catches
+
+The attacker below is `ransim`, a **harmless** ransomware imitation that only works on demo folders and can undo its own damage. Each example uses a different trick, and each trap catches a different one. The output is from the real demo run; paths are shortened and the PIDs and user name are just examples.
+
+### 1. The attacker hits a bait file (canary files)
+
+Bait documents such as `Budget_2026.xlsx` are planted among the real ones: `canaryctl plant ~/documents`. No real user ever edits them, so anyone who does is not a user.
 
 ```console
-$ ransim --attack ~/documents          # a harmless ransomware imitation
-
+$ ransim --attack ~/documents
   [ 1/25] encrypting Agreement_Rent.docx
   [ 2/25] encrypting Agreement_Vehicle.docx
   [ 3/25] encrypting Appraisal_Letter.pdf
   [ 4/25] encrypting Budget_2026.xlsx          <-- a bait file
 Killed                                         <-- the kernel stopped it here
 ```
-
 ```text
-17:02:11   KILLED   ransim[9138] uid=1000(student) tried to write to canary file
-                    ~/documents/Budget_2026.xlsx  -> operation blocked, process killed
+KILLED  ransim[9138] uid=1000(student) tried to write to canary file ~/documents/Budget_2026.xlsx
+        -> operation blocked, process killed
 ```
+**Result:** 3 files lost. The other 21 were never touched, and the bait file is intact, byte for byte.
 
-The other 21 files were never touched, and the bait file itself is intact, byte for byte.
+### 2. The attacker avoids the bait but works too fast (speed check)
 
-### What that is worth
+A smarter attacker skips the bait. Here the folder has **no bait at all**, it is only watched: `canaryctl watch ~/projects`. A person does not change 10 different files in 2 seconds. A program does.
 
-Same attacker, same kind of folder, three setups (numbers from `make test`):
+```console
+$ ransim --attack ~/projects
+  [ 8/20] encrypting Exam_Timetable.xlsx
+  [ 9/20] encrypting Holiday_Photo_01.jpg
+  [10/20] encrypting Holiday_Photo_02.jpg      <-- the 10th file in under 2 seconds
+Killed
+```
+```text
+KILLED  ransim[9201] uid=1000(student) changed 10 files within 2000 ms in ~/projects
+        (last: Holiday_Photo_02.jpg)  -> operation blocked, process killed
+```
+**Result:** 9 files lost, the 10th was refused. It was caught by what it did, not by what it touched.
+
+### 3. Someone snoops for passwords (honeytoken)
+
+A fake `passwords.txt` sits in the folder. Its content is made up, and nobody honest needs it. A thief searching for saved passwords will open it.
+
+```console
+$ cat ~/documents/passwords.txt
+Gmail        student.demo@example.com     Summer#2026!
+Net banking  demo_user_4821               Blue$Horse9
+```
+```text
+ALERT   cat[9300] uid=1000(student) read honeytoken ~/documents/passwords.txt
+```
+**Result:** reading is only suspicious, so `cat` is not killed, but you now know **which program, which user and which second**. Changing or deleting the honeytoken is treated as an attack and gets the process killed.
+
+### What it saved
 
 ![Files encrypted before the attack stopped: 20 with no protection, 3 with canary files, 9 with the speed check](docs/images/results.svg)
 
-With no guard all 20 files go. The canary layer stops it after 3. The speed check, with no bait at all, stops it after 9: the 10th file is the one it refuses.
+| Trap | Catches | Reaction |
+|---|---|---|
+| **Canary files** | anyone who changes, deletes or renames a bait file | block it and **kill the process** |
+| **Speed check** | one process changing 10 different files within 2 seconds | block it and **kill the process** |
+| **Honeytoken** | anyone who reads the fake secrets | **alert**: program, PID, user (changing it is killed) |
 
-> Capstone project for the Wipro Embedded Track (Linux System Programming + Linux Device Drivers). Kernel driver in **C**, user-space tools in **C++17**, Linux only.
+### Why three, not one
 
----
+Each trap covers a hole in the others, and the test suite proves every case:
 
-## Three layers of defence
-
-| | Layer | How it spots an attacker | What it does |
-|---|---|---|---|
-| 1 | **Canary files** | Bait documents (`Budget_2026.xlsx`, ...) that no real user ever modifies | block the operation, **kill the process** |
-| 2 | **Speed check** | Counts *different* files one process changes: 10 within 2 seconds is not a human | block the operation, **kill the process** |
-| 3 | **Honeytoken** | A fake `passwords.txt`; nobody honest ever opens it | **alert** with program, PID and user |
-
-They cover each other's blind spots, and the test suite proves each case:
-
-- an attacker **too slow** for the speed check still dies at the first canary
+- an attacker that is **too slow** for the speed check still dies at the first canary
 - an attacker that **avoids the bait** is caught by the speed check
 - an attacker that **renames a canary or hard-links it** gains nothing: matching is by inode, not by name
 - an attacker that **starts a new process for every file** escapes the speed check, but not the canaries
 
-## Try it in three commands
+## Run it yourself
 
-Inside an Ubuntu VM ([how to get one](docs/SETUP.md) — a kernel driver should never be a first experiment on a machine you care about):
+Inside an Ubuntu VM ([how to get one](docs/SETUP.md); a kernel driver should never be a first experiment on a machine you care about):
 
 ```bash
 make deps     # once: compiler and the headers of your running kernel
 make          # build the driver and the four tools
-make demo     # the narrated live demo, about 3 minutes
+make demo     # the narrated live demo, about 3 minutes (Enter between the five acts)
 ```
 
 `make test` runs the same story without pauses and prints 50 PASS/FAIL checks.
@@ -99,7 +133,7 @@ flowchart TB
 3. **Reacting.** The permission check is made to fail with `-EPERM`, so the file is never even truncated, and the offender gets `SIGKILL`.
 4. **Reporting.** A kernel hook may not sleep, so it only drops a record into a **kfifo ring buffer** and wakes the monitor; a **workqueue** writes to the kernel log afterwards. If the buffer is ever full, the loss is counted and reported, never silent.
 
-**One attack, step by step:**
+**One attack, step by step** (example 1 above):
 
 ```mermaid
 sequenceDiagram
@@ -133,6 +167,7 @@ The full design, the UML diagrams and the reasoning behind every choice: **[docs
 make load                                  # load the driver
 sudo build/canaryd                         # live monitor (in a second terminal)
 sudo build/canaryctl plant ~/test-folder   # bait and speed check for this folder
+sudo build/canaryctl watch ~/test-folder   # speed check only, no bait
 sudo build/canaryctl stats                 # counters and settings
 sudo build/canaryctl mode warn             # alert without killing
 sudo build/canaryctl allow rsync           # never block this program
@@ -141,11 +176,11 @@ sudo build/canaryctl clear                 # stop guarding everything
 
 Settings also work at load time (`sudo insmod kernel/canaryguard.ko mode=0 speed_threshold=20`), appear under `/sys/module/canaryguard/parameters/`, and live counters under `/sys/class/canaryguard/canaryguard/stats`.
 
-## Testing
+## Tested
 
 | What | How | Result |
 |---|---|---|
-| Behaviour | `make test`: 50 checks — all three layers, warn mode, safe list, delete and rename, evasion attempts, ring-buffer overflow, bad input, permissions, the monitor | all pass |
+| Behaviour | `make test`: 50 checks: all three layers, warn mode, safe list, delete and rename, evasion attempts, ring-buffer overflow, bad input, permissions, the monitor | all pass |
 | Kernels | the full suite **run** on 6.8 and 7.0; built with `W=1` against 6.8, 6.14, 6.17 and 7.0 | pass, no warnings |
 | Intel / AMD | driver and all tools **cross-built for x86-64** against Ubuntu's 6.8 Intel headers with `W=1`; the shared data-layout size checks hold | no warnings, no unresolved kernel symbols |
 | Load and unload | `make stress`: 20 cycles | no failure, no leak |
@@ -158,7 +193,7 @@ Measured on Ubuntu 24.04, arm64, kernels 6.8.0-134 and 7.0.0-38.
 
 Stated plainly, because knowing them is part of the design:
 
-- It **limits** damage, it does not undo it: files encrypted before the catch stay encrypted (3 of them in the demo).
+- It **limits** damage, it does not undo it: files encrypted before the catch stay encrypted (3 of them in example 1).
 - A **slow** attacker passes the speed check, and so does one that **starts a new process per file**. Both still die at a canary.
 - Bulk work inside a watched folder (copying 12 files at once) looks like an attack: use `mode warn`, `allow`, or a higher limit.
 - The safe list matches **process names**, which can be imitated.
@@ -166,9 +201,7 @@ Stated plainly, because knowing them is part of the design:
 - A file that was **already open** before it was registered can still be written; the monitor's SHA-256 check is the backstop.
 - A learning prototype, **not a production security product**.
 
-## Safety
-
-Only root can control the driver (`/dev/canaryguard` is mode 0600, plus a `CAP_SYS_ADMIN` check on every command). It refuses to watch system folders (`/`, `/usr`, `/etc`, ...). It never kills kernel threads, `init`, or its own tools. `ransim` only touches folders that carry a marker file it created itself.
+**Safety.** Only root can control the driver (`/dev/canaryguard` is mode 0600, plus a `CAP_SYS_ADMIN` check on every command). It refuses to watch system folders (`/`, `/usr`, `/etc`, ...). It never kills kernel threads, `init`, or its own tools. `ransim` only touches folders that carry a marker file it created itself.
 
 ## Documentation
 
