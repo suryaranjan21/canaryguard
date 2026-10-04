@@ -52,7 +52,7 @@ make          # build the driver and the four tools
 make demo     # the narrated live demo, about 3 minutes
 ```
 
-`make test` runs the same story without pauses and prints 50 PASS/FAIL checks. A full transcript is in [docs/SAMPLE_RUN.txt](docs/SAMPLE_RUN.txt).
+`make test` runs the same story without pauses and prints 50 PASS/FAIL checks.
 
 **There is no GUI and no web page.** This is a kernel driver, so it lives in the terminal and in `/dev`, `/sys` and `dmesg`, which is where a driver belongs.
 
@@ -150,9 +150,6 @@ Only root can control the driver (`/dev/canaryguard` is mode 0600, plus a `CAP_S
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | design, data flow, UML diagrams, every design decision and the alternatives |
 | [REQUIREMENTS.md](docs/REQUIREMENTS.md) | requirements traced to the tests that verify them, plan, risks |
 | [SETUP.md](docs/SETUP.md) | getting Ubuntu on Windows, building, troubleshooting |
-| [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | a 5-minute demonstration: what to show and what to say |
-| [VIVA_QA.md](docs/VIVA_QA.md) | questions and answers about the design and the code |
-| [SAMPLE_RUN.txt](docs/SAMPLE_RUN.txt) | the complete output of `make test` |
 
 <details>
 <summary><b>Course concepts used</b> (click to expand)</summary>

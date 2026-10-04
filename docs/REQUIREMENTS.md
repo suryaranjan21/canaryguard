@@ -56,7 +56,7 @@ Ransomware encrypts every file it can reach, quickly, one after another. Ordinar
 | Software or hardware architecture | a layered, event-driven design with a clear kernel/user boundary ([ARCHITECTURE.md](ARCHITECTURE.md)) |
 | GitHub with structure, source, README, documentation | this repository |
 | Completed and uploaded by 5 Oct 2026 | see the plan below |
-| 5 to 10 minute evaluation with a GitHub-based demonstration | [DEMO_SCRIPT.md](DEMO_SCRIPT.md): a 5-minute demo run straight from the repository |
+| 5 to 10 minute evaluation with a GitHub-based demonstration | `make demo`: a narrated, 3-minute demonstration that runs straight from the repository |
 
 *Hardware-specific driver topics from the course (interrupt handlers, GPIO, I2C, SPI) are not applicable: this is a software-security driver and there is no physical device.*
 
@@ -96,5 +96,5 @@ Solo project; the plan follows the build order, and each step was tested before 
 | Kernel API changes between versions break the build | version guards; compile-tested against four kernel versions; `make deps` installs the right headers |
 | The driver misbehaves and freezes the machine | developed only inside a VM; stress and concurrency tests; hooks registered last, removed first |
 | False positives kill a legitimate program | per-folder scope, configurable limit, `warn` mode, safe list; documented trade-off |
-| The demo fails on the evaluation machine | `make test` run beforehand; [SAMPLE_RUN.txt](SAMPLE_RUN.txt) as evidence; setup guide with troubleshooting |
+| The demo fails on the evaluation machine | `make test` run beforehand; setup guide with troubleshooting |
 | Virtualisation disabled on the demo laptop | checked early; setup guide explains how to enable it |
