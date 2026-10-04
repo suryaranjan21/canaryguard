@@ -121,6 +121,7 @@ Settings also work at load time (`sudo insmod kernel/canaryguard.ko mode=0 speed
 |---|---|---|
 | Behaviour | `make test`: 50 checks — all three layers, warn mode, safe list, delete and rename, evasion attempts, ring-buffer overflow, bad input, permissions, the monitor | all pass |
 | Kernels | the full suite **run** on 6.8 and 7.0; built with `W=1` against 6.8, 6.14, 6.17 and 7.0 | pass, no warnings |
+| Intel / AMD | driver and all tools **cross-built for x86-64** against Ubuntu's 6.8 Intel headers with `W=1`; the shared data-layout size checks hold | no warnings, no unresolved kernel symbols |
 | Load and unload | `make stress`: 20 cycles | no failure, no leak |
 | Concurrency | 8 parallel file-activity loops, attackers killed over and over, the decoy table rewritten continuously, **then the driver unloaded in the middle of it** | no crash, no kernel warning |
 | Overhead | open+close micro-benchmark | **+0.11 to +0.14 µs** per `open()` |

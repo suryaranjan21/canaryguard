@@ -1,0 +1,3 @@
+# Keep Unix line endings everywhere: the project is built inside Linux,
+# even when the files were first downloaded on Windows.
+* text=auto eol=lf

@@ -120,6 +120,7 @@ Clean up afterwards: `sudo make unload`. To delete the whole Multipass machine: 
 
 | Machine | Ubuntu | Kernel | CPU | Result |
 |---------|--------|--------|-----|--------|
-| Development VM (Lima on a Mac) | 24.04.4 LTS | 6.8.0-134-generic | arm64 | 50 / 50 checks pass; stress and concurrency tests pass |
+| Development VM | 24.04.4 LTS | 6.8.0-134-generic | arm64 | 50 / 50 checks pass; stress and concurrency tests pass |
 | Development VM, newest kernel | 24.04.4 LTS | 7.0.0-38-generic | arm64 | 50 / 50 checks pass; stress and concurrency tests pass |
 | Build check only | 24.04 | 6.14.0-37, 6.17.0-42 headers | arm64 | compiles without warnings |
+| Build check only (cross-compiled) | 24.04 | 6.8.0-134 Intel (x86-64) headers | x86-64 | driver and all tools compile without warnings |
