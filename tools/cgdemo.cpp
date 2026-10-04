@@ -723,7 +723,8 @@ private:
         say("Layer 2 stopped it with no bait at all (9 files lost).");
         say("Layer 3 told us who was snooping around the fake passwords.");
         say("And every alert reached user space through a ring buffer, via /dev/canaryguard.");
-        std::cout << "\n  " << passed_ << " checks passed, " << failed_ << " failed\n";
+        std::cout << "\n  " << passed_ << " checks passed, " << failed_ << " failed in this demo.\n"
+                  << "  Run 'make test' for the complete suite (the same acts plus many more checks).\n";
         return failed_ == 0 ? 0 : 1;
     }
 
