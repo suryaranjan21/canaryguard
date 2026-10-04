@@ -17,12 +17,17 @@ Also note your Windows edition (**Settings → System → About**): *Home* or *P
 
 ### Option A (recommended): Multipass
 
-Multipass, from Canonical (the makers of Ubuntu), creates Ubuntu virtual machines from one command.
+Multipass, from Canonical (the makers of Ubuntu), creates Ubuntu virtual machines from one command. On Windows its default driver (**HCS**) works on **Home, Pro and Enterprise**, so there is no driver to choose. (Canonical has deprecated the older VirtualBox and Hyper-V drivers; do not select them.)
 
-1. Install it from <https://canonical.com/multipass/install>.
-   - **Windows Pro / Enterprise:** choose the **Hyper-V** driver.
-   - **Windows Home:** choose the **VirtualBox** driver (the installer will offer to install it).
-2. Open **PowerShell** and create the machine:
+1. Switch on the Windows feature **Virtual Machine Platform** (once; harmless if it is already on). Open **PowerShell as Administrator** and run:
+
+   ```powershell
+   dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+   ```
+
+   Then **restart** the laptop.
+2. Install Multipass from <https://canonical.com/multipass/install> and keep the defaults.
+3. Open **PowerShell** and create the machine:
 
    ```powershell
    multipass launch 24.04 --name guard --cpus 2 --memory 4G --disk 20G
@@ -31,7 +36,7 @@ Multipass, from Canonical (the makers of Ubuntu), creates Ubuntu virtual machine
 
    You are now inside Ubuntu. Everything below is typed there.
 
-3. Get the code (the repository is public):
+4. Get the code (the repository is public):
 
    ```bash
    sudo apt-get update && sudo apt-get install -y git
@@ -55,7 +60,7 @@ Choose this if you want a full Ubuntu desktop on screen.
 
 1. Install **VirtualBox** from <https://www.virtualbox.org/> and download the **Ubuntu 24.04 Desktop ISO** from <https://ubuntu.com/download/desktop> (about 6 GB).
 2. Create a new virtual machine: type *Linux / Ubuntu (64-bit)*, **4 GB RAM**, **2 CPUs**, **25 GB** disk, and use the ISO as the installation medium. Install Ubuntu with the defaults.
-3. Open a terminal in Ubuntu and get the code as in Option A (step 3).
+3. Open a terminal in Ubuntu and get the code as in Option A (step 4).
 
 > A new Ubuntu 24.04 Desktop usually runs a **newer kernel** (6.14, 6.17 or 7.0) than a Multipass machine (6.8). CanaryGuard builds for both; `make deps` installs the headers that match whichever kernel you have.
 
@@ -104,7 +109,8 @@ Clean up afterwards: `sudo make unload`. To delete the whole Multipass machine: 
 | `/lib/modules/.../build: No such file or directory` | the kernel headers are missing: `make deps` |
 | `make: g++: command not found` | `make deps` |
 | `insmod: ERROR: could not insert module ...: Invalid module format` | the module was built for a different kernel (for example after a kernel update and reboot): `make clean && make` |
-| `insmod: ERROR: ... Key was rejected by service` | **Secure Boot** is on and refuses unsigned modules. Turn Secure Boot off in the VM settings (VirtualBox: *Settings → System* and untick *Enable EFI*, or disable Secure Boot in the VM's firmware) and restart the VM |
+| `insmod: ERROR: ... Key was rejected by service` | **Secure Boot** is on in the virtual machine and refuses unsigned modules. In VirtualBox (Option B) turn it off: *Settings → System* and untick *Enable EFI*, then restart the VM. If it happens in the Multipass machine, use Option B |
+| `multipass launch` fails with a message about virtualization or the platform | Virtual Machine Platform is off or the laptop was not restarted: repeat step 1 of Option A and restart; also check *Virtualization: Enabled* in Task Manager (step 0) |
 | `insmod: ERROR: ... Operation not permitted` | you forgot `sudo` (use `make load`) |
 | `canaryd: cannot open /dev/canaryguard: No such file or directory` | the driver is not loaded: `make load` |
 | `... Permission denied` from a tool | run it with `sudo` |
