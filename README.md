@@ -27,13 +27,7 @@ The other 21 files were never touched, and the bait file itself is intact, byte 
 
 Same attacker, same kind of folder, three setups (numbers from `make test`):
 
-```mermaid
-xychart-beta
-    title "Files encrypted before the attack stopped"
-    x-axis ["No protection", "Canary files", "Speed check"]
-    y-axis "files encrypted" 0 --> 25
-    bar [20, 3, 9]
-```
+![Files encrypted before the attack stopped: 20 with no protection, 3 with canary files, 9 with the speed check](docs/images/results.svg)
 
 With no guard all 20 files go. The canary layer stops it after 3. The speed check, with no bait at all, stops it after 9: the 10th file is the one it refuses.
 

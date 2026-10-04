@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" role="img" aria-label="Files encrypted before the attack stopped: 20 with no protection, 3 with canary files, 9 with the speed check">
+<style>text{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#24292f}.t{font-size:20px;font-weight:700}.s{font-size:13px;fill:#57606a}.v{font-size:26px;font-weight:700}.l{font-size:15px;font-weight:600}.a{font-size:12px;fill:#6e7781}</style>
+<rect width="760" height="380" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+<text x="380.0" y="38" text-anchor="middle" class="t">Files encrypted before the attack stopped</text>
+<text x="380.0" y="60" text-anchor="middle" class="s">same harmless attacker, three setups</text>
+<line x1="70" y1="300.0" x2="720" y2="300.0" stroke="#eaeef2"/>
+<text x="60" y="304.0" text-anchor="end" class="a">0</text>
+<line x1="70" y1="256.0" x2="720" y2="256.0" stroke="#eaeef2"/>
+<text x="60" y="260.0" text-anchor="end" class="a">5</text>
+<line x1="70" y1="212.0" x2="720" y2="212.0" stroke="#eaeef2"/>
+<text x="60" y="216.0" text-anchor="end" class="a">10</text>
+<line x1="70" y1="168.0" x2="720" y2="168.0" stroke="#eaeef2"/>
+<text x="60" y="172.0" text-anchor="end" class="a">15</text>
+<line x1="70" y1="124.0" x2="720" y2="124.0" stroke="#eaeef2"/>
+<text x="60" y="128.0" text-anchor="end" class="a">20</text>
+<line x1="70" y1="79.99999999999997" x2="720" y2="79.99999999999997" stroke="#eaeef2"/>
+<text x="60" y="83.99999999999997" text-anchor="end" class="a">25</text>
+<line x1="70" y1="300" x2="720" y2="300" stroke="#8c959f"/>
+<rect x="120" y="124.0" width="130" height="176.0" rx="6" fill="#d64545"/>
+<text x="185.0" y="114.0" text-anchor="middle" class="v">20</text>
+<text x="185.0" y="324" text-anchor="middle" class="l">No protection</text>
+<text x="185.0" y="344" text-anchor="middle" class="a">out of 20 files</text>
+<rect x="340" y="273.6" width="130" height="26.400000000000002" rx="6" fill="#2f9e6e"/>
+<text x="405.0" y="263.6" text-anchor="middle" class="v">3</text>
+<text x="405.0" y="324" text-anchor="middle" class="l">Canary files</text>
+<text x="405.0" y="344" text-anchor="middle" class="a">out of 25 files</text>
+<rect x="560" y="220.8" width="130" height="79.2" rx="6" fill="#e0a030"/>
+<text x="625.0" y="210.8" text-anchor="middle" class="v">9</text>
+<text x="625.0" y="324" text-anchor="middle" class="l">Speed check</text>
+<text x="625.0" y="344" text-anchor="middle" class="a">out of 20 files</text>
+</svg>
